@@ -692,7 +692,7 @@ class Sim:
                     person.careNeedLevel += 4
                     
                 if person.careNeedLevel >= self.p['numCareLevels']:
-                    person.careNeedLevel = self.p['numCareLevels'] - 1
+                    person.careNeedLevel = int(self.p['numCareLevels'] - 1)
                             
                 if person.house == self.displayHouse:
                     messageString = str(self.year) + ": #" + str(person.id) + " now has "
