@@ -6,7 +6,7 @@ import math
 class Person:
     """The person class stores information about a person in the sim."""
     counter = 1
-    def __init__ (self, mother, father, birthYear, age, sex, house, sec, cr, wage, inc, wlt, iw, fw, we, status, independence):
+    def __init__ (self, mother, father, birthYear, age, sex, house, sec, cr, pcr, wage, inc, wlt, iw, fw, we, status, independence):
         self.mother = mother
         self.motherID = -1 # For pickle
         self.father = father
@@ -41,6 +41,7 @@ class Person:
         self.totalDiscountedTime = 0
         
         self.classRank = cr
+        self.parentsClassRank = pcr
         self.dead = False
         self.partner = None
         if sex == 'random':
@@ -63,6 +64,7 @@ class Person:
         self.unmetSocialCareNeed = 0
         self.informalChildCareReceived = 0
         self.formalChildCareReceived = 0
+        self.publicChildCareContribution = 0
         self.informalSocialCareReceived = 0
         self.formalSocialCareReceived = 0
         self.childWork = 0
@@ -116,7 +118,7 @@ class Population:
             income = wage*weeklyHours
             workExperience = workingTime
             newMan = Person(None, None,
-                            birthYear, ageMale, 'male', None, None, classRank, wage, income, 0, initialWage, finalWage, workExperience, 'worker', True)
+                            birthYear, ageMale, 'male', None, None, classRank, classRank, wage, income, 0, initialWage, finalWage, workExperience, 'worker', True)
             
             workingTime = 0
             for i in range(int(ageFemale)-int(workingAge[classRank])):
@@ -133,7 +135,7 @@ class Population:
             income = wage*weeklyHours
             workExperience = workingTime
             newWoman = Person(None, None,
-                              birthYear, ageFemale, 'female', None, None, classRank, wage, income, 0, initialWage, finalWage, workExperience, 'worker', True)
+                              birthYear, ageFemale, 'female', None, None, classRank, classRank, wage, income, 0, initialWage, finalWage, workExperience, 'worker', True)
 
             # newMan.status = 'independent adult'
             # newWoman.status = 'independent adult'
