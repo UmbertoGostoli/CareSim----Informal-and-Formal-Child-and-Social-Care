@@ -37,7 +37,6 @@ class Sim:
         
         self.Outputs = ['year', 'currentPop', 'households', 'averageHouseholdSize', 'marriageTally', 
                         'marriagePropNow', 'divorceTally', 'shareSingleParents', 'shareFemaleSingleParent', 
-                        'totalCareDemandHours', 'totalCareSupply', 'totalUnmetNeed', 'shareUnmetCareNeeds', 
                         'taxPayers', 'taxBurden', 'familyCareRatio', 'employmentRate', 'shareWorkingHours', 
                         'publicSocialCare', 'costPublicSocialCare', 'sharePublicSocialCare', 'publicChildCare', 
                         'costPublicChildCare', 'sharePublicChildCare', 'costTaxFreeSocialCare', 'totalTaxRevenue', 
@@ -47,8 +46,14 @@ class Sim:
                         'shareMaleCarers', 'shareFemaleCarers', 'ratioWage', 'ratioIncome', 'shareFamilyCarer', 
                         'share_over20Hours_FamilyCarers', 'averageHoursOfCare', 'share_40to64_carers', 
                         'share_over65_carers', 'share_10PlusHours_over70', 'totalSocialCareNeed', 
-                        'totalInformalSocialCare', 'totalFormalSocialCare', 'totalSocialCare', 
-                        'share_InformalSocialCare', 'share_UnmetSocialCareNeed']
+                        'totalInformalSocialCare', 'totalFormalSocialCare', 'totalUnmetSocialCareNeed', 
+                        'totalSocialCare', 'share_InformalSocialCare', 'share_UnmetSocialCareNeed',
+                        'totalOWSC', 'shareOWSC', 'totalCostOWSC',
+                        'q1_socialCareNeed', 'q1_informalSocialCare', 'q1_formalSocialCare', 'q1_unmetSocialCareNeed', 'q1_outOfWorkSocialCare',
+                        'q2_socialCareNeed', 'q2_informalSocialCare', 'q2_formalSocialCare', 'q2_unmetSocialCareNeed', 'q2_outOfWorkSocialCare',
+                        'q3_socialCareNeed', 'q3_informalSocialCare', 'q3_formalSocialCare', 'q3_unmetSocialCareNeed', 'q3_outOfWorkSocialCare',
+                        'q4_socialCareNeed', 'q4_informalSocialCare', 'q4_formalSocialCare', 'q4_unmetSocialCareNeed', 'q4_outOfWorkSocialCare',
+                        'q5_socialCareNeed', 'q5_informalSocialCare', 'q5_formalSocialCare', 'q5_unmetSocialCareNeed', 'q5_outOfWorkSocialCare',]
         
         self.outputData = pd.DataFrame()
         # Save initial parametrs into Scenario folder
@@ -83,6 +88,7 @@ class Sim:
         self.numDivorces = []
         self.totalCareDemand = []
         self.totalCareSupply = []
+        self.informalSocialCareSupply = 0
         self.totalHospitalizationCost = 0
         self.hospitalizationCost = []
         self.numTaxpayers = []
@@ -351,9 +357,9 @@ class Sim:
         self.doCareTransitions()
         
         # self.doCareTransitions_UCN()
+ 
+        self.allocateChildCare() 
        
-        self.allocateChildCare()
-        
         self.allocateSocialCare()
         
         self.updateUnmetCareNeed()
@@ -510,9 +516,13 @@ class Sim:
             
         print self.socialClassShares
     
-    def deathProb(self, baseRate, sex, classRank, needLevel):  ##, shareUnmetNeed, classPop):
+    def deathProb(self, baseRate, person):  ##, shareUnmetNeed, classPop):
         
-        if sex == 'male':
+        classRank = person.classRank
+        if person.status == 'child' or person.status == 'student':
+            classRank = person.parentsClassRank
+        
+        if person.sex == 'male':
             mortalityBias = self.p['maleMortalityBias']
         else:
             mortalityBias = self.p['femaleMortalityBias']
@@ -539,7 +549,7 @@ class Sim:
                 
                 higherNeedRate = classRate/b
                
-                deathProb = higherNeedRate*math.pow(self.p['careNeedBias'], (self.p['numCareLevels']-1) - needLevel) # deathProb
+                deathProb = higherNeedRate*math.pow(self.p['careNeedBias'], (self.p['numCareLevels']-1) - person.careNeedLevel) # deathProb
       
         # Add the effect of unmet care need on mortality rate for each care need level
         
@@ -606,9 +616,9 @@ class Sim:
                     
                 classPop = [x for x in self.pop.livingPeople if x.careNeedLevel == person.careNeedLevel]
                 
-                dieProb = self.deathProb(rawRate, person.sex, person.parentsClassRank, person.careNeedLevel)
+                dieProb = self.deathProb(rawRate, person)
 
-                # dieProb = self.deathProb_UCN(rawRate, person.parentsClassRank, person.careNeedLevel, person.averageShareUnmetNeed, classPop)
+                # dieProb = self.deathProb_UCN(rawRate, person, person.averageShareUnmetNeed, classPop)
 
             #############################################################################
             
@@ -639,7 +649,7 @@ class Sim:
                 
                 classPop = [x for x in self.pop.livingPeople if x.careNeedLevel == person.careNeedLevel]
                 
-                dieProb = self.deathProb(rawRate, person.sex, person.parentsClassRank, person.careNeedLevel)
+                dieProb = self.deathProb(rawRate, person)
                 #### Temporarily by-passing the effect of unmet care need   ######
                 # dieProb = self.deathProb_UCN(rawRate, person.parentsClassRank, person.careNeedLevel, person.averageShareUnmetNeed, classPop)
                 
@@ -756,6 +766,10 @@ class Sim:
         return (baseRate)
     
     def updateUnmetCareNeed(self):
+        
+        for house in self.map.occupiedHouses:
+            house.careNetwork.clear()
+            house.suppliers[:] = []
         
         for person in self.pop.livingPeople:
             if person.careNeedLevel > 0:
@@ -1672,6 +1686,7 @@ class Sim:
             house.incomeByTaxBand = []
             house.averageChildCarePrice = 0
             house.networkSupport = 0
+            house.outOfWorkSocialCare = 0
             
             for person in house.occupants:
                 person.hoursChildCareDemand = 0
@@ -1966,7 +1981,7 @@ class Sim:
                     member.residualInformalSupplies = list(self.p['studentSupply'])
                 elif member.status == 'retired':
                     member.residualInformalSupplies = list(self.p['retiredSupply'])
-                elif member.status == 'worker':
+                elif member.status == 'worker' and member.careNeedLevel == 0:
                     member.residualInformalSupplies = list(self.p['employedSupply'])
                 member.residualInformalSupplies = [max(x-member.hoursSocialCareDemand, 0) for x in member.residualInformalSupplies]
                 member.hoursInformalSupplies = member.residualInformalSupplies
@@ -1977,9 +1992,10 @@ class Sim:
             
             employed = [x for x in householdCarers if x.status == 'worker']
             for worker in employed:
-                worker.residualWorkingHours = self.p['weeklyHours'][worker.careNeedLevel]
-                worker.availableWorkingHours = worker.residualWorkingHours
-                worker.potentialIncome = worker.residualWorkingHours*worker.wage
+                if worker.careNeedLevel == 0:
+                    worker.residualWorkingHours = self.p['weeklyHours'][worker.careNeedLevel]
+                    worker.availableWorkingHours = worker.residualWorkingHours
+                worker.potentialIncome = self.p['weeklyHours'][worker.careNeedLevel]*worker.wage
                 
             potentialIncomes = [x.potentialIncome for x in household if x.maternityStatus == False]
             potentialIncome = sum(potentialIncomes)
@@ -2119,7 +2135,10 @@ class Sim:
                 
                 forgoneSalary = self.p['incomeInitialLevels'][person.classRank]*self.p['weeklyHours'][person.careNeedLevel]
                 educationCosts = self.p['educationCosts'][person.classRank]
-                relCost = (forgoneSalary+educationCosts)/perCapitaDisposableIncome
+                
+                # relCost = (forgoneSalary+educationCosts)/perCapitaDisposableIncome
+                
+                relCost = forgoneSalary/perCapitaDisposableIncome
                 
                 # Check variable
 #                if self.year == self.p['getCheckVariablesAtYear']:
@@ -2197,7 +2216,18 @@ class Sim:
 #                    person.income = self.p['statePension']
                 
         for house in self.map.occupiedHouses:
+            house.outOfWorkSocialCare = sum([x.outOfWorkSocialCare for x in house.occupants])
             house.householdIncome = sum([x.income for x in house.occupants if x.maternityStatus == False])
+            house.incomePerCapita = house.householdIncome/float(len(house.occupants))
+            
+        households = [x for x in self.map.occupiedHouses]
+        households.sort(key=operator.attrgetter("incomePerCapita"))
+        for i in range(5):
+            number = int(round(len(households)/(5.0-float(i))))
+            quintile = households[:number]
+            for j in quintile:
+                j.incomeQuintile = i
+            households = [x for x in households if x not in quintile]
      
         # Compute tax revenue and income after tax
         earningPeople = [x for x in self.pop.livingPeople if x.status == 'worker' and x.maternityStatus == False]
@@ -2299,11 +2329,11 @@ class Sim:
         womenOfReproductiveAge = [x for x in self.pop.livingPeople
                                   if x.sex == 'female' and x.age >= self.p['minPregnancyAge']]
         womanClassShares = []
-        womanClassShares.append(len([x for x in womenOfReproductiveAge if x.parentsClassRank == 0])/float(len(womenOfReproductiveAge)))
-        womanClassShares.append(len([x for x in womenOfReproductiveAge if x.parentsClassRank == 1])/float(len(womenOfReproductiveAge)))
-        womanClassShares.append(len([x for x in womenOfReproductiveAge if x.parentsClassRank == 2])/float(len(womenOfReproductiveAge)))
-        womanClassShares.append(len([x for x in womenOfReproductiveAge if x.parentsClassRank == 3])/float(len(womenOfReproductiveAge)))
-        womanClassShares.append(len([x for x in womenOfReproductiveAge if x.parentsClassRank == 4])/float(len(womenOfReproductiveAge)))
+        womanClassShares.append(len([x for x in womenOfReproductiveAge if x.classRank == 0])/float(len(womenOfReproductiveAge)))
+        womanClassShares.append(len([x for x in womenOfReproductiveAge if x.classRank == 1])/float(len(womenOfReproductiveAge)))
+        womanClassShares.append(len([x for x in womenOfReproductiveAge if x.classRank == 2])/float(len(womenOfReproductiveAge)))
+        womanClassShares.append(len([x for x in womenOfReproductiveAge if x.classRank == 3])/float(len(womenOfReproductiveAge)))
+        womanClassShares.append(len([x for x in womenOfReproductiveAge if x.classRank == 4])/float(len(womenOfReproductiveAge)))
         a = 0
         for i in range(int(self.p['numberClasses'])):
             a += womanClassShares[i]*math.pow(self.p['fertilityBias'], i)
@@ -2329,31 +2359,31 @@ class Sim:
                                   and x.age <= self.p['maxPregnancyAge']
                                   and x.partner != None]
         
-        adultLadies_1 = [x for x in adultWomen if x.parentsClassRank == 0]   
+        adultLadies_1 = [x for x in adultWomen if x.classRank == 0]   
         marriedLadies_1 = len([x for x in adultLadies_1 if x.partner != None])
         if len(adultLadies_1) > 0:
             marriedPercentage.append(marriedLadies_1/float(len(adultLadies_1)))
         else:
             marriedPercentage.append(0)
-        adultLadies_2 = [x for x in adultWomen if x.parentsClassRank == 1]    
+        adultLadies_2 = [x for x in adultWomen if x.classRank == 1]    
         marriedLadies_2 = len([x for x in adultLadies_2 if x.partner != None])
         if len(adultLadies_2) > 0:
             marriedPercentage.append(marriedLadies_2/float(len(adultLadies_2)))
         else:
             marriedPercentage.append(0)
-        adultLadies_3 = [x for x in adultWomen if x.parentsClassRank == 2]   
+        adultLadies_3 = [x for x in adultWomen if x.classRank == 2]   
         marriedLadies_3 = len([x for x in adultLadies_3 if x.partner != None]) 
         if len(adultLadies_3) > 0:
             marriedPercentage.append(marriedLadies_3/float(len(adultLadies_3)))
         else:
             marriedPercentage.append(0)
-        adultLadies_4 = [x for x in adultWomen if x.parentsClassRank == 3]  
+        adultLadies_4 = [x for x in adultWomen if x.classRank == 3]  
         marriedLadies_4 = len([x for x in adultLadies_4 if x.partner != None])   
         if len(adultLadies_4) > 0:
             marriedPercentage.append(marriedLadies_4/float(len(adultLadies_4)))
         else:
             marriedPercentage.append(0)
-        adultLadies_5 = [x for x in adultWomen if x.parentsClassRank == 4]   
+        adultLadies_5 = [x for x in adultWomen if x.classRank == 4]   
         marriedLadies_5 = len([x for x in adultLadies_5 if x.partner != None]) 
         if len(adultLadies_5) > 0:
             marriedPercentage.append(marriedLadies_5/float(len(adultLadies_5)))
@@ -2371,13 +2401,17 @@ class Sim:
 #        marriedPercentage = float(marriedLadies)/float(adultLadies)
         
         for woman in womenOfReproductiveAge:
+            
+            womanClassRank = woman.classRank
+            if woman.status == 'student':
+                womanClassRank = woman.parentsClassRank
 
             if self.year < 1951:
                 rawRate = self.p['growingPopBirthProb']
-                birthProb = self.computeBirthProb(self.p['fertilityBias'], rawRate, woman.parentsClassRank)
+                birthProb = self.computeBirthProb(self.p['fertilityBias'], rawRate, womanClassRank)
             else:
                 rawRate = self.fert_data[(self.year - woman.birthdate)-16, self.year-1950]
-                birthProb = self.computeBirthProb(self.p['fertilityBias'], rawRate, woman.parentsClassRank)/marriedPercentage[woman.parentsClassRank]
+                birthProb = self.computeBirthProb(self.p['fertilityBias'], rawRate, womanClassRank)/marriedPercentage[womanClassRank]
                 
             # birthProb = self.computeBirthProb(self.p['fertilityBias'], rawRate, woman.classRank)
             
@@ -2447,7 +2481,17 @@ class Sim:
                 if man.house == self.displayHouse:
                     messageString = str(self.year) + ": #" + str(man.id) + " splits with #" + str(wife.id) + "."
                     self.textUpdateList.append(messageString)
-                manChildren = [x for x in man.children if x.dead == False and x.house == man.house and x.father == man and x.mother != wife]
+                    
+                # manChildren = [x for x in man.children if x.dead == False and x.house == man.house and x.father == man and x.mother != wife]
+                
+                manChildren = []
+                children = [x for x in man.children if x.dead == False and x.house == man.house]
+                for child in children:
+                    if child.father == man and child.mother != wife:
+                        manChildren.append(child)
+                    else:
+                        if np.random.random() < self.p['probChildrenWithFather']:
+                            manChildren.append(child)
                 
 #                for x in manChildren:
 #                    if x not in man.house.occupants:
@@ -2502,13 +2546,15 @@ class Sim:
                 if random.random() < manMarriageProb:
                     potentialBrides = []
                     for woman in interestedWomen:
-                        if woman.house != man.house:
-                            if man.mother != None and woman.mother != None:
-                                if man.mother != woman.mother and man not in woman.children and woman not in man.children:
-                                    potentialBrides.append(woman)
-                            else:
-                                if man not in woman.children and woman not in man.children:
-                                    potentialBrides.append(woman)
+                        deltaAge = man.age - woman.age
+                        if deltaAge < 20 and deltaAge > -10:
+                            if woman.house != man.house:
+                                if man.mother != None and woman.mother != None:
+                                    if man.mother != woman.mother and man not in woman.children and woman not in man.children:
+                                        potentialBrides.append(woman)
+                                else:
+                                    if man not in woman.children and woman not in man.children:
+                                        potentialBrides.append(woman)
                     
                     if len(potentialBrides) > 0:
                         manTown = man.house.town
@@ -2520,10 +2566,12 @@ class Sim:
                             geoFactor = 1/math.exp(self.p['betaGeoExp']*geoDistance)
                             
                             womanRank = woman.classRank
+                            studentFactor = 1.0
                             if woman.status == 'student':
+                                studentFactor = self.p['studentFactorParam']
                                 womanRank = max(woman.father.classRank, woman.mother.classRank)
                             statusDistance = float(abs(man.classRank-womanRank))/float((self.p['numberClasses']-1))
-                            if man.classRank < woman.classRank:
+                            if man.classRank < womanRank:
                                 betaExponent = self.p['betaSocExp']
                             else:
                                 betaExponent = self.p['betaSocExp']*self.p['rankGenderBias']
@@ -2535,7 +2583,7 @@ class Sim:
                             
                             childrenFactor = 1/math.exp(self.p['bridesChildrenExp']*numChildrenWithWoman)
                             
-                            marriageProb = geoFactor*socFactor*ageFactor*childrenFactor
+                            marriageProb = geoFactor*socFactor*ageFactor*childrenFactor*studentFactor
                             
                             bridesWeights.append(marriageProb)
                             
@@ -2808,11 +2856,11 @@ class Sim:
         ## Put the new house onto the list of occupied houses if it was empty
         household = list(personList)
         
-#        if len(household) != len(set(household)):
-#            print 'Error in movePeopleIntoChosenHouse: double counting people'
-#            for member in household:
-#                print member.id
-#            sys.exit()
+        if len(household) != len(set(household)):
+            print 'Error in movePeopleIntoChosenHouse: double counting people'
+            for member in household:
+                print member.id
+            sys.exit()
         
         
         ## Move everyone on the list over from their former house to the new one
@@ -2973,29 +3021,74 @@ class Sim:
         self.numDivorces.append(self.divorceTally)            
         
         
-        totalCareDemandHours = sum([x.careDemand for x in self.pop.livingPeople])
-        self.totalCareDemand.append(totalCareDemandHours)
-        totalUnmetNeed = sum([x.unmetCareNeed for x in self.pop.livingPeople])
-        self.totalUnmetNeed.append(totalUnmetNeed)
-        shareUnmetCareNeeds = 0
-        if totalCareDemandHours > 0:
-            shareUnmetCareNeeds = totalUnmetNeed/totalCareDemandHours
-        self.shareUnmetNeed.append(shareUnmetCareNeeds)
+        totalSocialCareNeed = sum([x.hoursSocialCareDemand for x in self.pop.livingPeople])
+        totalInformalSocialCare = sum([x.informalSocialCareReceived for x in self.pop.livingPeople])
+        totalFormalSocialCare = sum([x.formalSocialCareReceived for x in self.pop.livingPeople])
+        totalSocialCare = totalInformalSocialCare + totalFormalSocialCare
+        totalUnmetSocialCareNeed = sum([x.unmetSocialCareNeed for x in self.pop.livingPeople])
+        share_InformalSocialCare = 0
+        if totalFormalSocialCare > 0:
+            share_InformalSocialCare = totalInformalSocialCare/totalSocialCare
+        share_UnmetSocialCareNeed = 0
+        if totalSocialCareNeed > 0:
+            share_UnmetSocialCareNeed = totalUnmetSocialCareNeed/totalSocialCareNeed
         
-        totalCareSupply = sum([x.careAvailable for x in self.pop.livingPeople])
-        self.totalCareSupply.append(totalCareSupply)
+        outOfWorkSocialCare = [x.outOfWorkSocialCare for x in self.pop.livingPeople]
+        totalOWSC = sum(outOfWorkSocialCare)
+        shareOWSC = 0
+        if totalInformalSocialCare > 0:
+            shareOWSC = totalOWSC/totalInformalSocialCare
+        totalCostOWSC = sum([x.outOfWorkSocialCare*x.wage for x in self.pop.livingPeople if x.outOfWorkSocialCare > 0])
+        
+        # By income quintiles
+        households = [x for x in self.map.occupiedHouses]
+        q1_households = [x for x in households if x.incomeQuintile == 0]
+        q1_socialCareNeed = sum([x.totalSocialCareNeed for x in q1_households])
+        q2_households = [x for x in households if x.incomeQuintile == 1]
+        q2_socialCareNeed = sum([x.totalSocialCareNeed for x in q2_households])
+        q3_households = [x for x in households if x.incomeQuintile == 2]
+        q3_socialCareNeed = sum([x.totalSocialCareNeed for x in q3_households])
+        q4_households = [x for x in households if x.incomeQuintile == 3]
+        q4_socialCareNeed = sum([x.totalSocialCareNeed for x in q4_households])
+        q5_households = [x for x in households if x.incomeQuintile == 4]
+        q5_socialCareNeed = sum([x.totalSocialCareNeed for x in q5_households])
+        
+        q1_informalSocialCare = sum([x.informalSocialCareReceived for x in q1_households])
+        q2_informalSocialCare = sum([x.informalSocialCareReceived for x in q2_households])
+        q3_informalSocialCare = sum([x.informalSocialCareReceived for x in q3_households])
+        q4_informalSocialCare = sum([x.informalSocialCareReceived for x in q4_households])
+        q5_informalSocialCare = sum([x.informalSocialCareReceived for x in q5_households])
+        
+        q1_outOfWorkSocialCare = sum([x.outOfWorkSocialCare for x in q1_households])
+        q2_outOfWorkSocialCare = sum([x.outOfWorkSocialCare for x in q2_households])
+        q3_outOfWorkSocialCare = sum([x.outOfWorkSocialCare for x in q3_households])
+        q4_outOfWorkSocialCare = sum([x.outOfWorkSocialCare for x in q4_households])
+        q5_outOfWorkSocialCare = sum([x.outOfWorkSocialCare for x in q5_households])
+        
+        q1_formalSocialCare = sum([x.formalSocialCareReceived for x in q1_households])
+        q2_formalSocialCare = sum([x.formalSocialCareReceived for x in q2_households])
+        q3_formalSocialCare = sum([x.formalSocialCareReceived for x in q3_households])
+        q4_formalSocialCare = sum([x.formalSocialCareReceived for x in q4_households])
+        q5_formalSocialCare = sum([x.formalSocialCareReceived for x in q5_households])
+        
+        q1_unmetSocialCareNeed = q1_socialCareNeed - (q1_informalSocialCare + q1_formalSocialCare)
+        q2_unmetSocialCareNeed = q2_socialCareNeed - (q2_informalSocialCare + q2_formalSocialCare)
+        q3_unmetSocialCareNeed = q3_socialCareNeed - (q3_informalSocialCare + q3_formalSocialCare)
+        q4_unmetSocialCareNeed = q4_socialCareNeed - (q4_informalSocialCare + q4_formalSocialCare)
+        q5_unmetSocialCareNeed = q5_socialCareNeed - (q5_informalSocialCare + q5_formalSocialCare)
+        
         taxPayers = len([x for x in self.pop.livingPeople if x.status == 'student' or x.status == 'worker'])
         self.numTaxpayers.append(taxPayers)
         
-        if totalCareDemandHours == 0:
+        if totalSocialCareNeed == 0:
             familyCareRatio = 0.0
         else:
-            familyCareRatio = (totalCareDemandHours - totalUnmetNeed)/totalCareDemandHours
+            familyCareRatio = (totalSocialCareNeed - totalUnmetSocialCareNeed)/totalSocialCareNeed
 
         ##familyCareRatio = ( totalCareDemandHours - unmetNeed ) / (1.0 * (totalCareDemandHours+0.01))
         self.totalFamilyCare.append(familyCareRatio)
 
-        taxBurden = ( totalUnmetNeed * self.p['hourlyCostOfCare'] * 52.18 ) / ( taxPayers * 1.0 )
+        taxBurden = ( totalUnmetSocialCareNeed * self.p['hourlyCostOfCare'] * 52.18 ) / ( taxPayers * 1.0 )
         self.totalTaxBurden.append(taxBurden)
         
         ## Count the proportion of adult women who are married
@@ -3089,31 +3182,27 @@ class Sim:
         if len(over70_carers) > 0:
             share_10PlusHours_over70 = float(len(TenPlusHours_over70))/float(len(over70_carers))
             
-        totalSocialCareNeed = sum([x.hoursSocialCareDemand for x in self.pop.livingPeople])
-        totalInformalSocialCare = sum([x.informalSocialCareReceived for x in self.pop.livingPeople])
-        totalFormalSocialCare = sum([x.formalSocialCareReceived for x in self.pop.livingPeople])
-        totalSocialCare = totalInformalSocialCare + totalFormalSocialCare
-        totalUnmetSocialCareNeed = sum([x.unmetSocialCareNeed for x in self.pop.livingPeople])
-        share_InformalSocialCare = 0
-        if totalFormalSocialCare > 0:
-            share_InformalSocialCare = totalInformalSocialCare/totalSocialCare
-        share_UnmetSocialCareNeed = 0
-        if totalSocialCareNeed > 0:
-            share_UnmetSocialCareNeed = totalUnmetSocialCareNeed/totalSocialCareNeed
+        
         
         self.costTaxFreeSocialCare = totalFormalSocialCare*self.p['priceSocialCare']*self.p['socialCareTaxFreeRate']
         
         outputs = [self.year, currentPop, households, averageHouseholdSize, self.marriageTally, marriagePropNow, 
-                   self.divorceTally, shareSingleParents, shareFemaleSingleParent, totalCareDemandHours, totalCareSupply, 
-                   totalUnmetNeed, shareUnmetCareNeeds, taxPayers, taxBurden, familyCareRatio, shareEmployed, shareWorkHours, 
-                   self.publicSocialCare, self.costPublicSocialCare, self.sharePublicSocialCare, self.costTaxFreeSocialCare, 
-                   self.publicChildCare, self.costPublicChildCare, self.sharePublicChildCare, self.totalTaxRevenue, 
-                   self.totalPensionRevenue, self.pensionExpenditure, self.totalHospitalizationCost, self.socialClassShares[0], 
-                   self.socialClassShares[1], self.socialClassShares[2], self.socialClassShares[3], self.socialClassShares[4], 
-                   formalChildCare, childcareIncomeShare, shareInformalChildCare, shareCareGivers, ratioFemaleMaleCarers, 
-                   shareMaleCarers, shareFemaleCarers, ratioWage, ratioIncome, shareFamilyCarer, share_over20Hours_FamilyCarers, 
-                   averageHoursOfCare, share_40to64_carers, share_over65_carers, share_10PlusHours_over70, totalSocialCareNeed, 
-                   totalInformalSocialCare, totalFormalSocialCare, totalSocialCare, share_InformalSocialCare, share_UnmetSocialCareNeed]
+                   self.divorceTally, shareSingleParents, shareFemaleSingleParent, taxPayers, taxBurden, familyCareRatio, 
+                   shareEmployed, shareWorkHours, self.publicSocialCare, self.costPublicSocialCare, self.sharePublicSocialCare, 
+                   self.costTaxFreeSocialCare, self.publicChildCare, self.costPublicChildCare, self.sharePublicChildCare, 
+                   self.totalTaxRevenue, self.totalPensionRevenue, self.pensionExpenditure, self.totalHospitalizationCost, 
+                   self.socialClassShares[0], self.socialClassShares[1], self.socialClassShares[2], self.socialClassShares[3], 
+                   self.socialClassShares[4], formalChildCare, childcareIncomeShare, shareInformalChildCare, shareCareGivers, 
+                   ratioFemaleMaleCarers, shareMaleCarers, shareFemaleCarers, ratioWage, ratioIncome, shareFamilyCarer, 
+                   share_over20Hours_FamilyCarers, averageHoursOfCare, share_40to64_carers, share_over65_carers, 
+                   share_10PlusHours_over70, totalSocialCareNeed, totalInformalSocialCare, totalFormalSocialCare, 
+                   totalUnmetSocialCareNeed, totalSocialCare, share_InformalSocialCare, share_UnmetSocialCareNeed, 
+                   totalOWSC, shareOWSC, totalCostOWSC,
+                   q1_socialCareNeed, q1_informalSocialCare, q1_formalSocialCare, q1_unmetSocialCareNeed, q1_outOfWorkSocialCare,
+                   q2_socialCareNeed, q2_informalSocialCare, q2_formalSocialCare, q2_unmetSocialCareNeed, q2_outOfWorkSocialCare,
+                   q3_socialCareNeed, q3_informalSocialCare, q3_formalSocialCare, q3_unmetSocialCareNeed, q3_outOfWorkSocialCare,
+                   q4_socialCareNeed, q4_informalSocialCare, q4_formalSocialCare, q4_unmetSocialCareNeed, q4_outOfWorkSocialCare,
+                   q5_socialCareNeed, q5_informalSocialCare, q5_formalSocialCare, q5_unmetSocialCareNeed, q5_outOfWorkSocialCare]
         
         if self.year == self.p['startYear']:
             if not os.path.exists(policyFolder):

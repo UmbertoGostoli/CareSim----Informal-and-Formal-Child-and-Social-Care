@@ -20,7 +20,7 @@ def meta_params():
     
     m = OrderedDict() # For meta-parameters file
     
-    m['numRepeats'] = 1
+    m['numRepeats'] = 10
     m['initialPop'] = 750
     m['startYear'] = 1860
     m['endYear'] = 2050
@@ -94,7 +94,7 @@ def meta_params():
     
     # multiprocessing params
     m['multiprocessing'] = True
-    m['numberProcessors'] = 4
+    m['numberProcessors'] = 10
     
     
     folder = 'defaultSimFolder'
@@ -202,12 +202,13 @@ def init_params():
     # Marriages params
     p['incomeMarriageParam'] = 0.025
     p['betaGeoExp'] = 2.0
+    p['studentFactorParam'] = 0.5
     p['betaSocExp'] = 2.0
     p['rankGenderBias'] = 0.5
     p['deltageProb'] =  [0.0, 0.1, 0.25, 0.4, 0.2, 0.05]
     p['bridesChildrenExp'] = 0.5
     p['manWithChildrenBias'] = 0.7
-    p['maleMarriageMultiplier'] = 1.3
+    p['maleMarriageMultiplier'] = 1.4
 
     # Unmer Need params
     p['unmetCareNeedDiscountParam'] = 0.5
@@ -271,7 +272,7 @@ def init_params():
     p['variableDivorce'] = 0.1 # 0.06
     p['divorceModifierByDecade'] = [ 0.0, 1.0, 0.9, 0.5, 0.4, 0.2, 0.1, 0.03, 0.01, 0.001, 0.001, 0.001, 0.0, 0.0, 0.0, 0.0 ]
     p['divorceBias'] = 0.85
-    p['probChildrenWithFather'] = 0.2
+    p['probChildrenWithFather'] = 0.1
     
     ## Leaving home and moving around statistics
     p['probApartWillMoveTogether'] = 1.0 # 0.3
@@ -516,7 +517,7 @@ if __name__ == "__main__":
         graphsDummy.to_csv("graphsParams.csv", index=False)
         
     
-    parametersFromFiles = False
+    parametersFromFiles = True
     
     scenariosParams = []
     policiesParams = [[[]]]

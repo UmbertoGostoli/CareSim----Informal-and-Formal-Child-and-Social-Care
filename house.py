@@ -23,6 +23,8 @@ class House:
         self.y = hy
         self.icon = None
         self.householdIncome = 0
+        self.incomePerCapita = 0
+        self.incomeQuintile = 0
         self.name = self.town.name + "-" + str(hx) + "-" + str(hy)
         self.id = House.counter
         
@@ -54,6 +56,7 @@ class House:
         self.formalChildCareCost = 0
         self.formalSocialCareReceived = 0
         self.householdFormalSupplyCost = 0
+        self.outOfWorkSocialCare = 0
         self.incomeByTaxBand = []
         self.averageChildCarePrice = 0
         

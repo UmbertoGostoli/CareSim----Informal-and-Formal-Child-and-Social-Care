@@ -79,19 +79,6 @@ def singlePolicyGraphs(output, policyFolder, p):
     pp.close()
     
     fig, ax = plt.subplots() # Argument: figsize=(5, 3)
-    p1, = ax.plot(output['year'], output['totalCareDemandHours'], color="red", label = 'Aggregate Care Demand')
-    p2, = ax.plot(output['year'], output['totalCareSupply'], color="blue", label = 'Aggregate Care Supply')
-    ax.set_ylabel('Number of hours/week')
-    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
-    ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
-    fig.tight_layout()
-    path = os.path.join(folder, 'careDemandAndSupply.pdf')
-    pp = PdfPages(path)
-    pp.savefig(fig)
-    pp.close()
-    
-    fig, ax = plt.subplots() # Argument: figsize=(5, 3)
     p1, = ax.plot(output['year'], output['marriagePropNow'], color="red")
     ax.set_ylabel('Married adult women (share)')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -123,18 +110,6 @@ def singlePolicyGraphs(output, policyFolder, p):
     ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
     fig.tight_layout()
     path = os.path.join(folder, 'shareFemaleSingleParents.pdf')
-    pp = PdfPages(path)
-    pp.savefig(fig)
-    pp.close()
-    
-    fig, ax = plt.subplots() # Argument: figsize=(5, 3)
-    p1, = ax.plot(output['year'], output['shareUnmetCareNeeds'], color="red")
-    ax.set_ylabel('Unmet Care Needs (share)')
-    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
-    ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
-    fig.tight_layout()
-    path = os.path.join(folder, 'shareUnmetCareNeeds.pdf')
     pp = PdfPages(path)
     pp.savefig(fig)
     pp.close()
@@ -357,6 +332,20 @@ def singlePolicyGraphs(output, policyFolder, p):
     pp.close()
     
     fig, ax = plt.subplots() # Argument: figsize=(5, 3)
+    p1, = ax.plot(output['year'], output['totalUnmetSocialCareNeed'], label = 'Informal Care')
+    ax.set_title('Informal and Formal Social Care')
+    ax.set_ylabel('Hours per week')
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
+    ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
+    fig.tight_layout()
+    path = os.path.join(folder, 'hoursUnmetSocialCareNeed.pdf')
+    pp = PdfPages(path)
+    pp.savefig(fig)
+    pp.close()
+    
+    
+    fig, ax = plt.subplots() # Argument: figsize=(5, 3)
     p1, = ax.plot(output['year'], output['share_InformalSocialCare'], color="red")
     ax.set_ylabel('Informal social care (share)')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -380,6 +369,23 @@ def singlePolicyGraphs(output, policyFolder, p):
     pp.savefig(fig)
     pp.close()
     
+    fig, ax = plt.subplots() # Argument: figsize=(5, 3)
+    p1, = ax.plot(output['year'], output['q1_socialCareNeed'], label = 'Q1')
+    p2, = ax.plot(output['year'], output['q2_socialCareNeed'], label = 'Q2')
+    p3, = ax.plot(output['year'], output['q3_socialCareNeed'], label = 'Q3')
+    p4, = ax.plot(output['year'], output['q4_socialCareNeed'], label = 'Q4')
+    p5, = ax.plot(output['year'], output['q5_socialCareNeed'], label = 'Q5')
+    ax.set_title('Social Care Needs by Income Quintiles')
+    ax.set_ylabel('Hours per week')
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
+    ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
+    fig.tight_layout()
+    path = os.path.join(folder, 'socialCareNeedsByQuintiles.pdf')
+    pp = PdfPages(path)
+    pp.savefig(fig)
+    pp.close()
+    
 
 def multiplePoliciesGraphs(output, scenarioFolder, p, numPolicies):
     
@@ -388,6 +394,9 @@ def multiplePoliciesGraphs(output, scenarioFolder, p, numPolicies):
         os.makedirs(folder)
     
     # Add graphs across policies (within the same run/scenario)
+    
+    #############################  Population   #######################################
+    
     fig, ax = plt.subplots() # Argument: figsize=(5, 3)
     graph = []
     for i in range(numPolicies):
@@ -405,6 +414,8 @@ def multiplePoliciesGraphs(output, scenarioFolder, p, numPolicies):
     pp.savefig(fig)
     pp.close()
 
+    ########################### Share of Umnet Care Needs    #################################
+    
     fig, ax = plt.subplots() # Argument: figsize=(5, 3)
     graph = []
     for i in range(numPolicies):
@@ -585,6 +596,9 @@ def multipleRepeatsGraphs(output, simFolder, p, numRepeats, numPolicies, numScen
         os.makedirs(folder)
 
     # Add graphs across runs (for the same scenario/policy combinations)
+    # For each policy scenario, take the average of year 2010-2020 for each run, and do a bar chart with error bars for each outcome of interest
+    
+    # Policy comparison: make charts by outcomes with bars representing the different policies.
     
     for j in range(numPolicies):
         for i in range(numScenarios):
@@ -623,6 +637,8 @@ def multipleRepeatsGraphs(output, simFolder, p, numRepeats, numPolicies, numScen
             pp = PdfPages(path)
             pp.savefig(fig)
             pp.close()
+
+
 
 mP = pd.read_csv('metaParameters.csv', sep=',', header=0)
 numberRows = mP.shape[0]

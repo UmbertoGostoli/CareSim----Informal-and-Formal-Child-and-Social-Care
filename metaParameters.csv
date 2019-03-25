@@ -1,5 +1,5 @@
 numRepeats,initialPop,startYear,endYear,thePresent,statsCollectFrom,policyStartYear,outputYear,minStartAge,maxStartAge,verboseDebugging,singleRunGraphs,favouriteSeed,loadFromFile,numberClasses,numCareLevels,timeDiscountingRate,mapGridXDimension,mapGridYDimension,townGridDimension,numHouseClasses,houseClasses,cdfHouseClasses,shareClasses,classAdjustmentBeta,ukMap,ukClassBias,mapDensityModifier,interactiveGraphics,delayTime,screenWidth,screenHeight,bgColour,mainFont,fontColour,dateX,dateY,popX,popY,pixelsInPopPyramid,careLevelColour,houseSizeColour,pixelsPerTown,maxTextUpdateList,multiprocessing,numberProcessors
-1,750,1860,2050,2012,1960,2020,2015,20,40,FALSE,FALSE,1552482591,FALSE,5,5,0.035,8,12,25,3,small,0.6,0.2,3,0,0,0.6,FALSE,0,1300,700,black,Helvetica 18,white,70,20,70,50,2000,blue,brown,56,22,TRUE,4
+10,750,1860,2050,2012,1960,2020,2015,20,40,FALSE,FALSE,1552482591,FALSE,5,5,0.035,8,12,25,3,small,0.6,0.2,3,0,0,0.6,FALSE,0,1300,700,black,Helvetica 18,white,70,20,70,50,2000,blue,brown,56,22,TRUE,10
 ,,,,,,,,,,,,,,,,,,,,,medium,0.9,0.35,,0.1,-0.05,,,,,,,,,,,,,,green,purple,,,,
 ,,,,,,,,,,,,,,,,,,,,,large,5,0.25,,0.2,-0.05,,,,,,,,,,,,,,yellow,yellow,,,,
 ,,,,,,,,,,,,,,,,,,,,,,,0.15,,0.1,-0.05,,,,,,,,,,,,,,orange,,,,,
