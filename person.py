@@ -25,6 +25,8 @@ class Person:
         self.birthdate = birthYear
         self.wage = wage
         self.income = inc
+        self.workingPeriods = 0
+        self.cumulativeIncome = 0
         self.potentialIncome = inc
         self.wealth = wlt
         self.initialIncome = iw
