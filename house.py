@@ -14,7 +14,6 @@ class House:
             i += 1
             c = cdfHouseClasses[i] - classBias
         self.size = i
-        self.householdIncome = 0
         self.wealth = 0
         self.occupants = []
         self.occupantsID = []  # For pickle
@@ -23,6 +22,7 @@ class House:
         self.y = hy
         self.icon = None
         self.householdIncome = 0
+        self.householdCumulativeIncome = 0
         self.incomePerCapita = 0
         self.incomeQuintile = 0
         self.name = self.town.name + "-" + str(hx) + "-" + str(hy)
@@ -31,6 +31,7 @@ class House:
         # House care variables
         self.careNetwork = nx.Graph()
         self.totalSocialCareNeed = 0
+        self.totalUnmetSocialCareNeed = 0
         self.totalChildCareNeed = 0
         self.childCareNeeds = []
         self.childCarePrices = []

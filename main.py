@@ -121,6 +121,7 @@ def init_params():
     p['taxationRates'] = [0.4, 0.2, 0.0]
     
     p['statePension'] = 164.35
+    p['minContributionYears'] = 35
     p['employeePensionContribution'] = 0.04
     p['employerPensionContribution'] = 0.03
     p['statePensionContribution'] = 0.01
@@ -172,8 +173,8 @@ def init_params():
     # Public Social Care Provision Parameters
     p['taxBreakRate'] = 0.0
     p['socialCareTaxFreeRate'] = 0.0
-    p['publicCareNeedLevel'] = 3 # 5
-    p['publicCareAgeLimit'] = 1000
+    p['publicCareNeedLevel'] = 4 # 5
+    p['publicCareAgeLimit'] = 0 # 1000
     p['minWealthMeansTest'] = 14250
     p['maxWealthMeansTest'] = 23250
     p['partialContributionRate'] = 0.5
@@ -195,7 +196,7 @@ def init_params():
     p['careBeta'] = 0.01
     
     p['retiredSupply'] = [48.0, 24.0, 12.0, 8.0]
-    p['employedSupply'] = [24.0, 12.0, 8.0, 4.0]
+    p['employedSupply'] = [20.0, 12.0, 8.0, 4.0]
     p['studentSupply'] = [24.0, 12.0, 4.0, 0.0]
     p['teenagerSupply'] = [12.0, 0.0, 0.0, 0.0]
     
@@ -241,7 +242,7 @@ def init_params():
     p['femaleAgeCareScaling'] = 19.0
     p['cdfCareTransition'] = [ 0.7, 0.9, 0.95, 1.0 ]
     p['careLevelNames'] = ['none','low','moderate','substantial','critical']
-    p['careDemandInHours'] = [ 0.0, 8.0, 20.0, 40.0, 80.0 ] # [ 0.0, 8.0, 16.0, 30.0, 80.0 ]
+    p['careDemandInHours'] = [ 0.0, 12.0, 24.0, 48.0, 96.0 ] # [ 0.0, 8.0, 16.0, 30.0, 80.0 ]
     
     ## Cost of care for tax burden
     p['hourlyCostOfCare'] = 20.0
