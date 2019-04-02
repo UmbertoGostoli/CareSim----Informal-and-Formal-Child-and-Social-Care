@@ -376,8 +376,12 @@ class Sim:
         self.doBirths()
   
         self.updateIncome()
+        
+        # self.updateWealth()
+        
+        self.updateWealth_Ind()
       
-        self.updateWealth()
+        
         
         # self.doSocialTransition_TD()
         
@@ -2323,6 +2327,25 @@ class Sim:
 #                dK = np.random.normal(0, self.p['wageVar'])
 #                person.wage = wage*math.exp(dK)
 #                person.income = person.wage*self.p['weeklyHours'][int(person.careNeedLevel)]
+        
+    def updateWealth_Ind(self):
+        earningPop = [x for x in self.pop.livingPeople if x.cumulativeIncome > 0]
+        
+        earningPop.sort(key=operator.attrgetter("cumulativeIncome"))
+        
+        peopleToAssign = list(earningPop)
+        wealthPercentiles = []
+        for i in range(100, 0, -1):
+            groupNum = int(float(len(peopleToAssign))/float(i))
+            peopleGroup = peopleToAssign[0:groupNum]
+            wealthPercentiles.append(peopleGroup)
+            peopleToAssign = peopleToAssign[groupNum:]
+            
+        for i in range(100):
+            wealth = float(self.wealthPercentiles[i])
+            for person in wealthPercentiles[i]:
+                dK = np.random.normal(0, self.p['wageVar'])
+                person.wealth = wealth*math.exp(dK)
             
     def updateWealth(self):
         households = [x for x in self.map.occupiedHouses]
