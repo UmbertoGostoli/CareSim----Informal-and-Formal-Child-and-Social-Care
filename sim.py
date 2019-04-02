@@ -739,26 +739,30 @@ class Sim:
             
             unmetNeedFactor = 1/math.exp(self.p['unmetNeedExponent']*person.averageShareUnmetNeed)
             
+            classRank = person.classRank
+            if person.status == 'child' or person.status == 'student':
+                classRank = person.parentsClassRank
+            
             careProb = baseProb*math.pow(self.p['careBias'], person.classRank)/unmetNeedFactor 
             
             
             #### Alternative prob which depends on care level and unmet care need   #####################################
-            # careProb = baseProb # baseProb*math.pow(self.p['careBias'], person.classRank)/unmetNeedFactor
+            # careProb = baseProb # baseProb*math.pow(self.p['careBias'], classRank)/unmetNeedFactor
             
             
-            if random.random() < careProb:
-                baseTransition = self.baseRate(self.p['careBias'], 1-self.p['careTransitionRate'])
+            if np.random.random() < careProb:
+                baseTransition = self.baseRate(self.p['careBias'], 1.0-self.p['careTransitionRate'])
                 if person.careNeedLevel > 0:
-                    unmetNeedFactor = 1/math.exp(self.p['unmetNeedExponent']*person.averageShareUnmetNeed)
+                    unmetNeedFactor = 1.0/math.exp(self.p['unmetNeedExponent']*person.averageShareUnmetNeed)
                 else:
                     unmetNeedFactor = 1.0
-                transitionRate = (1.0 - baseTransition*math.pow(self.p['careBias'], person.classRank))*unmetNeedFactor
+                transitionRate = (1.0 - baseTransition*math.pow(self.p['careBias'], classRank))*unmetNeedFactor
 
                 stepCare = 1
                 bound = transitionRate
-                while random.random() > bound and stepCare < self.p['numCareLevels'] - 1:
+                while np.random.random() > bound and stepCare < self.p['numCareLevels'] - 1:
                     stepCare += 1
-                    bound += (1-bound)*transitionRate
+                    bound += (1.0-bound)*transitionRate
                 person.careNeedLevel += stepCare
                     
                 if person.careNeedLevel >= self.p['numCareLevels']:
