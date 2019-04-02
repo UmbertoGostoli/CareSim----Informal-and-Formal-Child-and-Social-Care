@@ -771,7 +771,7 @@ class Sim:
     
     def baseRate(self, bias, cp):
         a = 0
-        for i in range(self.p['numberClasses']):
+        for i in range(int(self.p['numberClasses'])):
             a += self.socialClassShares[i]*math.pow(bias, i)
         baseRate = cp/a
         return (baseRate)
