@@ -737,29 +737,36 @@ class Sim:
             
             baseProb = self.baseRate(self.p['careBias'], baseProb)
             
-            unmetNeedFactor = 1/math.exp(self.p['unmetNeedExponent']*person.averageShareUnmetNeed)
+            unmetNeedFactor = 1.0/math.exp(self.p['unmetNeedExponent']*person.averageShareUnmetNeed)
+            
             
             classRank = person.classRank
             if person.status == 'child' or person.status == 'student':
                 classRank = person.parentsClassRank
             
-            careProb = baseProb*math.pow(self.p['careBias'], person.classRank)/unmetNeedFactor 
+            careProb = baseProb*math.pow(self.p['careBias'], classRank)/unmetNeedFactor 
             
             
             #### Alternative prob which depends on care level and unmet care need   #####################################
-            # careProb = baseProb # baseProb*math.pow(self.p['careBias'], classRank)/unmetNeedFactor
+            # careProb = baseProb # baseProb*math.pow(self.p['careBias'], person.classRank)/unmetNeedFactor
             
             
             if np.random.random() < careProb:
                 baseTransition = self.baseRate(self.p['careBias'], 1.0-self.p['careTransitionRate'])
+                if baseTransition >= 1.0:
+                    print 'Error: base transition >= 1'
+                    # sys.exit()
+                    
+                    
                 if person.careNeedLevel > 0:
                     unmetNeedFactor = 1.0/math.exp(self.p['unmetNeedExponent']*person.averageShareUnmetNeed)
                 else:
                     unmetNeedFactor = 1.0
                 transitionRate = (1.0 - baseTransition*math.pow(self.p['careBias'], classRank))*unmetNeedFactor
-
+                
                 stepCare = 1
                 bound = transitionRate
+                
                 while np.random.random() > bound and stepCare < self.p['numCareLevels'] - 1:
                     stepCare += 1
                     bound += (1.0-bound)*transitionRate
@@ -816,20 +823,26 @@ class Sim:
         
         while len(residualReceivers) > 0:
     
+            #################    Check if transfer is done: Pre need and supply   ######################################
+            
+            preChildCareNeed = sum([x.totalChildCareNeed for x in residualReceivers])
+            preNetworkSupply = sum([x.networkSupply for x in residualReceivers])
+            
+            #########################################################################################
+            
+            
             childCareNeeds = [x.totalChildCareNeed for x in residualReceivers]
             probReceivers = [i/sum(childCareNeeds) for i in childCareNeeds]
             receiver = np.random.choice(residualReceivers, p = probReceivers)
             
-#            print ''
-#            print receiver.id
-#            print receiver.totalChildCareNeed
-#            print receiver.highPriceChildCare
-#            print receiver.lowPriceChildCare
-#            print sum(receiver.networkInformalSupplies)
-#            print sum(receiver.networkInformalSupplies)
-#            if receiver.totalSocialCareNeed > 0:
-#                print sum(receiver.networkInformalSupplies)/receiver.totalSocialCareNeed
-#            print receiver.networkSupply
+            
+            ###    Individual check   ##########################
+            
+            preReceiverCareNeed = receiver.totalChildCareNeed
+            
+            ###########################################################
+            
+            
             income = self.computeHouseholdIncome(receiver)
             # print 'Household income: ' + str(income)
             residualIncome = receiver.residualIncomeForChildCare
@@ -912,13 +925,35 @@ class Sim:
 #                
 #                print 'Error: receiver does not have child care need'
 #                sys.exit()
-                
+                    
+             ###    Individual check   ##########################
+            
+            postReceiverCareNeed = receiver.totalChildCareNeed
+            
+            if postReceiverCareNeed >= preReceiverCareNeed:
+                print 'Error: child care iteration withount allocation!'
+                # sys.exit()
+            
+            ########################################################### 
+        
             receivers = [x for x in self.map.occupiedHouses if x.totalChildCareNeed > 0]
             
             for receiver in receivers:
                 self.updateChildCareNetworkSupply(receiver, supplier)
            
             residualReceivers = [x for x in receivers if x.networkSupply > 0]
+            
+            #################    Check if transfer is done: Post need and supply   ######################################
+            
+            postChildCareNeed = sum([x.totalChildCareNeed for x in residualReceivers])
+            postNetworkSupply = sum([x.networkSupply for x in residualReceivers])
+        
+            if postChildCareNeed >= preChildCareNeed:
+                print 'Error: child care iteration withount allocation!'
+                # sys.exit()
+                
+            #########################################################################################
+            
             
     def allocateSocialCare(self):
         
@@ -932,18 +967,56 @@ class Sim:
         residualReceivers = [x for x in receivers if x.networkSupply > 0]
         
         while len(residualReceivers) > 0:
+            
+            #################    Check if transfer is done: Pre need and supply   ######################################
+            
+            preSocialCareNeed = sum([x.totalUnmetSocialCareNeed for x in residualReceivers])
+            preNetworkSupply = sum([x.networkSupply for x in residualReceivers])
+            
+            #########################################################################################
+            
+            
             socialCareNeeds = [x.totalUnmetSocialCareNeed for x in residualReceivers]
             probReceivers = [i/sum(socialCareNeeds) for i in socialCareNeeds]
             receiver = np.random.choice(residualReceivers, p = probReceivers)
+            
+            ###    Individual check   ##########################
+            
+            preReceiverCareNeed = receiver.totalUnmetSocialCareNeed
+            
+            ###########################################################
+            
+            
             probSuppliers = [i/sum(receiver.networkTotalSupplies) for i in receiver.networkTotalSupplies]
             supplier = np.random.choice(receiver.suppliers, p = probSuppliers)
         
             self.transferSocialCare(receiver, supplier)
             
+            ###    Individual check   ##########################
+            
+            postReceiverCareNeed = receiver.totalUnmetSocialCareNeed
+            
+            if postReceiverCareNeed >= preReceiverCareNeed:
+                print 'Error: social care iteration withount allocation!'
+                # sys.exit()
+            
+            ########################################################### 
+            
             receivers = [x for x in self.map.occupiedHouses if x.totalUnmetSocialCareNeed > 0]
             for receiver in receivers:
                 self.updateSocialCareNetworkSupply(receiver, supplier)
             residualReceivers = [x for x in receivers if x.networkSupply > 0]
+            
+            #################    Check if transfer is done: Post need and supply   ######################################
+            
+            postSocialCareNeed = sum([x.totalUnmetSocialCareNeed for x in residualReceivers])
+            postNetworkSupply = sum([x.networkSupply for x in residualReceivers])
+        
+            if postSocialCareNeed >= preSocialCareNeed:
+                print 'Error: social care iteration withount allocation!'
+                # sys.exit()
+                
+            #########################################################################################
         
     def transferSocialCare(self, receiver, supplier):
         
@@ -1849,20 +1922,47 @@ class Sim:
                 careNeed = self.p['careDemandInHours'][person.careNeedLevel]
                 person.hoursSocialCareDemand = careNeed
                 person.unmetSocialCareNeed = person.hoursSocialCareDemand
-                if person.careNeedLevel >= self.p['publicCareNeedLevel'] and person.age >= self.p['publicCareAgeLimit']:
+                
+                preCareNeed = person.unmetSocialCareNeed
+                
+                if person.careNeedLevel >= self.p['publicCareNeedLevel'] and person.age >= self.p['publicCareAgeLimit'] and person.independentStatus == True:
                     socialCareCost = person.unmetSocialCareNeed*self.p['priceSocialCare']*(1.0 - self.p['socialCareTaxFreeRate'])
                     # The state pays for all the social care need that cannot be satisfied by the person with his income (leaving him a minimum income)
                     if socialCareCost > person.income - self.p['minimumIncomeGuarantee']:
-                        stateShare = 0.0
-                        if person.wealth <= self.p['minWealthMeansTest']:
-                            stateShare = 1.0
-                        elif  person.wealth > self.p['minWealthMeansTest'] and person.wealth < self.p['maxWealthMeansTest']:
-                            stateShare = self.p['partialContributionRate']
-                        stateContribution = (socialCareCost - (person.income - self.p['minimumIncomeGuarantee']))*stateShare
-                        stateCare = int(stateContribution/self.p['priceSocialCare']*(1.0 - self.p['socialCareTaxFreeRate']))
-                        stateCare = int((stateCare+self.p['quantumCare']/2)/self.p['quantumCare'])*self.p['quantumCare']
-                        self.publicSocialCare += stateCare
-                        person.unmetSocialCareNeed -= stateCare    
+                        if person.income > self.p['minimumIncomeGuarantee']:
+                            stateShare = 0.0
+                            if person.wealth <= self.p['minWealthMeansTest']:
+                                stateShare = 1.0
+                            elif  person.wealth > self.p['minWealthMeansTest'] and person.wealth < self.p['maxWealthMeansTest']:
+                                stateShare = self.p['partialContributionRate']
+                            stateContribution = (socialCareCost - (person.income - self.p['minimumIncomeGuarantee']))*stateShare
+                            stateCare = int(stateContribution/self.p['priceSocialCare']*(1.0 - self.p['socialCareTaxFreeRate']))
+                            stateCare = int((stateCare+self.p['quantumCare']/2)/self.p['quantumCare'])*self.p['quantumCare']
+                            self.publicSocialCare += stateCare
+                            person.unmetSocialCareNeed -= stateCare   
+                        else:
+                            stateShare = 0.0
+                            if person.wealth <= self.p['minWealthMeansTest']:
+                                stateShare = 1.0
+                            elif  person.wealth > self.p['minWealthMeansTest'] and person.wealth < self.p['maxWealthMeansTest']:
+                                stateShare = self.p['partialContributionRate']
+                            stateContribution = socialCareCost*stateShare
+                            stateCare = int(stateContribution/self.p['priceSocialCare']*(1.0 - self.p['socialCareTaxFreeRate']))
+                            stateCare = int((stateCare+self.p['quantumCare']/2)/self.p['quantumCare'])*self.p['quantumCare']
+                            self.publicSocialCare += stateCare
+                            person.unmetSocialCareNeed -= stateCare
+                        
+                        postCareNeed = person.unmetSocialCareNeed
+                        
+                        if postCareNeed > preCareNeed or postCareNeed < 0:
+                            print postCareNeed
+                            print preCareNeed
+                            print person.income
+                            print stateContribution
+                            print stateCare
+                            # sys.exit()
+                            
+                        
             house.totalSocialCareNeed = sum([x.hoursSocialCareDemand for x in household])
             house.totalUnmetSocialCareNeed = sum([x.unmetSocialCareNeed for x in household])
         
@@ -2271,7 +2371,6 @@ class Sim:
         for i in range(5):
             number = int(round(len(households)/(5.0-float(i))))
             quintile = households[:number]
-
             for j in quintile:
                 j.incomeQuintile = i
             households = [x for x in households if x not in quintile]
