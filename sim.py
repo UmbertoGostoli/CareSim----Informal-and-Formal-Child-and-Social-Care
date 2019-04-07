@@ -841,7 +841,7 @@ class Sim:
             preReceiverCareNeed = receiver.totalChildCareNeed
             
             ###########################################################
-            
+            case = 0
             
             income = self.computeHouseholdIncome(receiver)
             # print 'Household income: ' + str(income)
@@ -902,24 +902,47 @@ class Sim:
                 if sum(receiver.networkInformalSupplies) > 0:
                     probSuppliers = [i/sum(receiver.networkInformalSupplies) for i in receiver.networkInformalSupplies]
                     supplier = np.random.choice(receiver.suppliers, p = probSuppliers)
+                    
+#                    case = 1
+#                    print 'tranfer child care: formal (1)'
+#                    print sum(receiver.networkInformalSupplies)
+                    
                     self.transferInformalChildCare(receiver, supplier)
-                elif receiver.residualIncomeForChildCare > 0:
+                    
+                    
+                elif receiver.formalChildCareSupply > 0:
                     supplier = receiver
                     # Formal supply: the supplier can only be the household itself.
+#                    case = 2
+#                    print 'tranfer child care: formal (2)'
+#                    print receiver.formalChildCareSupply
+                    
                     self.outOfIncomeChildCare(receiver)
+                    
+                    
+                    
             elif receiver.lowPriceChildCare > 0:
                 # In this case, a random selection based on relative availability will be done until the ratio between 
                 # the available informal care and the household's social care is above 1, i.e. there is enough informal care.
                 # As the ratio goes below 1, only out-of-income care will be supplied.
-                if receiver.totalUnmetSocialCareNeed == 0 or sum(receiver.networkInformalSupplies)/receiver.totalUnmetSocialCareNeed > 1.0 or receiver.residualIncomeForChildCare == 0:
+                if receiver.totalUnmetSocialCareNeed == 0 or sum(receiver.networkInformalSupplies)/receiver.totalUnmetSocialCareNeed > 1.0 or receiver.formalChildCareSupply == 0:
                     # Select a supplier based on total availability (informal + formal)
                     probSuppliers = [i/sum(receiver.networkTotalSupplies) for i in receiver.networkTotalSupplies]
                     supplier = np.random.choice(receiver.suppliers, p = probSuppliers)
                     indexSupplier = receiver.suppliers.index(supplier)
-                    self.transferChildCare(receiver, supplier, indexSupplier)
-                elif receiver.residualIncomeForChildCare > 0:
+                    
+                    case = self.transferChildCare(receiver, supplier, indexSupplier)
+                    
+                    
+                elif receiver.formalChildCareSupply > 0:
                     supplier = receiver
+                    
+                    
                     # Formal supply: the supplier can only be the household itself.
+#                    case = 5
+#                    print 'tranfer child care: formal (5)'
+#                    print receiver.formalChildCareSupply
+                    
                     self.outOfIncomeChildCare(receiver)
 #            else:
 #                
@@ -927,6 +950,10 @@ class Sim:
 #                sys.exit()
                     
              ###    Individual check   ##########################
+             
+#            if case == 0:
+#                print 'Error: no allocation function called!'
+#                sys.exit()
             
             postReceiverCareNeed = receiver.totalChildCareNeed
             
@@ -938,8 +965,10 @@ class Sim:
         
             receivers = [x for x in self.map.occupiedHouses if x.totalChildCareNeed > 0]
             
-            for receiver in receivers:
-                self.updateChildCareNetworkSupply(receiver, supplier)
+            for otherReceiver in receivers:
+                if otherReceiver == receiver:
+                    continue
+                self.updateChildCareNetworkSupply(otherReceiver, supplier, 4)
            
             residualReceivers = [x for x in receivers if x.networkSupply > 0]
             
@@ -998,13 +1027,15 @@ class Sim:
             
             if postReceiverCareNeed >= preReceiverCareNeed:
                 print 'Error: social care iteration withount allocation!'
-                # sys.exit()
+                sys.exit()
             
             ########################################################### 
             
             receivers = [x for x in self.map.occupiedHouses if x.totalUnmetSocialCareNeed > 0]
-            for receiver in receivers:
-                self.updateSocialCareNetworkSupply(receiver, supplier)
+            for otherReceiver in receivers:
+                if otherReceiver == receiver:
+                    continue
+                self.updateSocialCareNetworkSupply(receiver, supplier, 0)
             residualReceivers = [x for x in receivers if x.networkSupply > 0]
             
             #################    Check if transfer is done: Post need and supply   ######################################
@@ -1080,18 +1111,27 @@ class Sim:
             receiver.totalUnmetSocialCareNeed = sum([x.unmetSocialCareNeed for x in careTakers])
             receiver.informalSocialCareReceived += self.p['quantumCare']
             
+            self.updateSocialCareNetworkSupply(receiver, supplier, 1)
+            
         else:
             household = list(supplier.occupants)
             employed = [x for x in household if x.status == 'worker' and x.availableWorkingHours > 0]
+            
             costQuantumSocialCare = self.socialCareCost(supplier)
             priceSocialCare = costQuantumSocialCare/self.p['quantumCare']
             
             if supplier.town != receiver.town or len(employed) == 0: # Only formal care is possible
                 
+#                print 'Supplier id: ' + str(supplier.id)
+#                print 'Pre income for social care: ' + str(supplier.residualIncomeForSocialCare)
+#                print 'Cost quantum social care: ' + str(costQuantumSocialCare)
+                
                 for j in range(4):
                     supplier.residualIncomeForSocialCare[j] -= costQuantumSocialCare
-                    supplier.residualIncomeForSocialCare[j] = max(receiver.residualIncomeForSocialCare[j], 0)
+                    supplier.residualIncomeForSocialCare[j] = max(supplier.residualIncomeForSocialCare[j], 0.0)
                 supplier.householdFormalSupplyCost += costQuantumSocialCare
+                
+                # print 'Post income for social care: ' + str(supplier.residualIncomeForSocialCare)
                 
                 receiverOccupants = list(receiver.occupants)                
                 careTakers = [x for x in receiverOccupants if x.unmetSocialCareNeed > 0]
@@ -1108,13 +1148,15 @@ class Sim:
                 receiver.totalUnmetSocialCareNeed = sum([x.unmetSocialCareNeed for x in careTakers])
                 receiver.formalSocialCareReceived += self.p['quantumCare']
                 
+                self.updateSocialCareNetworkSupply(receiver, supplier, 2)
+                
             else:
                 employed.sort(key=operator.attrgetter("wage"))
                 carer = employed[0]
                 if carer.wage > priceSocialCare: # In this case, it is more convenient to pay for formal care
                     for j in range(4):
                         supplier.residualIncomeForSocialCare[j] -= costQuantumSocialCare
-                        supplier.residualIncomeForSocialCare[j] = max(receiver.residualIncomeForSocialCare[j], 0)
+                        supplier.residualIncomeForSocialCare[j] = max(supplier.residualIncomeForSocialCare[j], 0)
                     supplier.householdFormalSupplyCost += costQuantumSocialCare
                     
                     employed.sort(key=operator.attrgetter("wage"), reverse=True)
@@ -1136,6 +1178,8 @@ class Sim:
                     receiver.totalUnmetSocialCareNeed = sum([x.unmetSocialCareNeed for x in careTakers])
                     receiver.formalSocialCareReceived += self.p['quantumCare']
                     
+                    self.updateSocialCareNetworkSupply(receiver, supplier, 3)
+                    
                 else: # In this case, it is more convenient to take time off work to provide informal care.
                     
                     if receiver == supplier:
@@ -1151,9 +1195,13 @@ class Sim:
                     carer.outOfWorkSocialCare += careTransferred
                     carer.socialWork += careTransferred
                     
+                    # print 'Pre-residual Income for care (4): ' + str(supplier.residualIncomeForSocialCare)
+                    
                     for j in range(4):
                         supplier.residualIncomeForSocialCare[j] -= carer.wage*careTransferred
-                        supplier.residualIncomeForSocialCare[j] = max(receiver.residualIncomeForSocialCare[j], 0)
+                        supplier.residualIncomeForSocialCare[j] = max(supplier.residualIncomeForSocialCare[j], 0)
+                        
+                    # print 'Post-residual Income for care (4): ' + str(supplier.residualIncomeForSocialCare)
                     
                     receiverOccupants = list(receiver.occupants)
                     careTakers = [x for x in receiverOccupants if x.unmetSocialCareNeed > 0]
@@ -1169,6 +1217,8 @@ class Sim:
                             break
                     receiver.totalUnmetSocialCareNeed = sum([x.unmetSocialCareNeed for x in careTakers])
                     receiver.informalSocialCareReceived += self.p['quantumCare']
+                    
+                    self.updateSocialCareNetworkSupply(receiver, supplier, 4)
         
     def socialCareCost(self, house):
         availableIncomeByTaxBand = self.updateIncomeByTaxBand(house)
@@ -1272,9 +1322,14 @@ class Sim:
             house.networkTotalSupplies.append(informalSupply+maxFormalSocialCare)
             house.networkSupply += maxFormalSocialCare
             
-    def updateSocialCareNetworkSupply(self, house, supplier):
+    def updateSocialCareNetworkSupply(self, house, supplier, n):
         
         town = house.town
+        
+        oldSupply = house.networkSupply
+        oldInformalSupplies = list(house.networkInformalSupplies)
+        oldFormalCareSupplies = list(house.networkFormalSocialCareSupplies)
+        oldTotalSupplies = list(house.networkTotalSupplies)
         
         if supplier in house.suppliers:
         
@@ -1294,12 +1349,32 @@ class Sim:
                 informalSupply = float(sum([x.residualInformalSupplies[distance] for x in householdCarers]))
             house.networkInformalSupplies[supplierIndex] = informalSupply
             
+            # print 'Updating formal care supply...'
             maxFormalSocialCare = float(self.updateFormalSocialCareSupplies(supplier, distance))
             house.networkFormalSocialCareSupplies[supplierIndex] = maxFormalSocialCare
             
             house.networkTotalSupplies[supplierIndex] = informalSupply+maxFormalSocialCare
             
             house.networkSupply = sum(house.networkTotalSupplies)
+            
+            if house.networkSupply >= oldSupply and n != 0:
+                print 'Error: social care supply did not decrease!'
+                print 'Case: ' + str(n)
+                print house.id
+                print [x.id for x in house.suppliers]
+                print supplierIndex
+                print supplier.id
+                print ''
+                print oldSupply
+                print house.networkSupply
+                print oldInformalSupplies
+                print house.networkInformalSupplies
+                print oldFormalCareSupplies
+                print house.networkFormalSocialCareSupplies
+                print oldTotalSupplies
+                print house.networkTotalSupplies
+                
+                sys.exit()
         
         
     
@@ -1317,7 +1392,7 @@ class Sim:
         # Decrease the suppliers' informal supply by the quantum of care.
         if  receiver != supplier:
             receiver.networkSupport += self.p['quantumCare']
-            
+       
         residualCare = self.p['quantumCare']
         for i in householdCarers:
             careForNeed = min(i.residualInformalSupply, residualCare)
@@ -1329,21 +1404,20 @@ class Sim:
                 residualCare -= careForNeed
                 if residualCare <= 0:
                     break
-                    
+    
         # Decrease the child care needs of the receiver
         children = [x for x in receiver.occupants if x.age > 0 and x.age < self.p['ageTeenagers'] and x.unmetChildCareNeed > 0]
         residualCare = self.p['quantumCare']
         for child in children:
-            childCare = min(child.unmetChildCareNeed, residualCare)
-            child.unmetChildCareNeed -= childCare
+            child.informalChildCareReceived += min(self.p['quantumCare'], child.unmetChildCareNeed)
+            child.unmetChildCareNeed -= self.p['quantumCare']
             child.unmetChildCareNeed = max(child.unmetChildCareNeed, 0)
-            child.informalChildCareReceived += childCare
-            residualCare -= childCare
-            if residualCare <= 0:
-                break
         receiver.totalChildCareNeed = sum([x.unmetChildCareNeed for x in children])
         receiver.informalChildCareReceived += self.p['quantumCare']
         self.updateChildCareNeeds(receiver)       
+        
+        # print 'Checking netwrk supply after case 1'
+        self.updateChildCareNetworkSupply(receiver, supplier, 1)
         
     def outOfIncomeChildCare(self, receiver):
         
@@ -1368,7 +1442,7 @@ class Sim:
             carer = employed[0]
             
         if len(employed) == 0 or carer.wage >= valueInformalChildCare: # In this case, it is more convenient to pay formal care 
-            
+           
             costQuantumChildCare = self.childCareCost(children)
             costQuantumChildCare = min(costQuantumChildCare, receiver.residualIncomeForChildCare)
             receiver.residualIncomeForChildCare -= costQuantumChildCare
@@ -1391,6 +1465,9 @@ class Sim:
                 employed.sort(key=operator.attrgetter("wage"), reverse=True)
                 employed[0].availableWorkingHours -= costQuantumChildCare/employed[0].wage
                 employed[0].availableWorkingHours = max(employed[0].availableWorkingHours, 0)
+                
+            
+            
             
             formalChildCares = [x.formalChildCareReceived for x in children if x.formalChildCareReceived < self.p['childcareTaxFreeCap']]
             if len(formalChildCares) > 0:
@@ -1411,6 +1488,9 @@ class Sim:
             receiver.formalChildCareReceived += self.p['quantumCare'] 
             receiver.formalChildCareCost += costQuantumChildCare
             self.updateChildCareNeeds(receiver)
+            
+            # print 'Checking netwrk supply after case 2 (formal)'
+            self.updateChildCareNetworkSupply(receiver, receiver, 2)
             
         else: # In this case, it is more convenient to take time off work to provide informal care
             
@@ -1444,7 +1524,7 @@ class Sim:
             # print 'Miised income for care: ' + str(carer.wage*self.p['quantumCare'])
             
             receiver.residualIncomeForChildCare = max(receiver.residualIncomeForChildCare, 0)
-            
+           
             incomeAfter = self.computeHouseholdIncome(receiver)
             # print 'Household income After: ' + str(incomeAfter)
             
@@ -1493,6 +1573,8 @@ class Sim:
 #                print 'Error after'
 #                sys.exit()
             
+            
+            
             children = [x for x in receiver.occupants if x.age > 0 and x.age < self.p['ageTeenagers'] and x.unmetChildCareNeed > 0]
             residualCare = self.p['quantumCare']
             for child in children:
@@ -1503,10 +1585,12 @@ class Sim:
             receiver.informalChildCareReceived = sum([x.informalChildCareReceived for x in children])
             self.updateChildCareNeeds(receiver)
             
-            
+            # print 'Checking netwrk supply after case 2 (informal)'
+            self.updateChildCareNetworkSupply(receiver, receiver, 3)
         
         
     def transferChildCare(self, receiver, supplier, index):
+        case = -1
         # Transfer quantim of care: decide who trasfers which kind of care (informal or formal) to whom
         informalSupply = receiver.networkInformalSupplies[index]
         formalChildCare = 0
@@ -1523,10 +1607,18 @@ class Sim:
         # If 'informal care' is selected: informal care provider are sorted in decreasing order.
         # Their supply is used to satisfy the most expensive care need.
         if care == 'informal care':
-           self.transferInformalChildCare(receiver, supplier)
+#            case = 3
+#            print 'tranfer child care: informal (3)'
+#            print informalSupply
+            self.transferInformalChildCare(receiver, supplier)
         else:
+#            case = 4
+#            print 'tranfer child care: formal (4)'
+#            print formalChildCare
         # Both formal and out-of-income informal care are possible: choice depends on price of child care and lowest wage.
             self.outOfIncomeChildCare(receiver)
+            
+        return case
     
     def childCareCost(self, children):
         children.sort(key=operator.attrgetter("formalChildCareReceived"))
@@ -1626,10 +1718,13 @@ class Sim:
     def computeChildCareNetworkSupply(self, house):
         
         town = house.town
+        
+       
+        
         house.networkSupply = 0
+        house.formalChildCareSupply = 0
         house.networkTotalSupplies = []
         house.networkInformalSupplies = []
-        house.networkFormalChildCareSupplies = []
         house.childCareWeights = []
         house.formalCaresRatios = []
         house.suppliers = [house]
@@ -1638,7 +1733,7 @@ class Sim:
         # Household supply
         
         household = list(house.occupants)
-        householdCarers = [x for x in household if x.age >= self.p['ageTeenagers'] and x.maternityStatus == False]
+        householdCarers = [x for x in household if x.residualInformalSupplies[0] > 0]
         informalSupply = sum([x.residualInformalSupplies[0] for x in householdCarers])
         house.networkInformalSupplies.append(informalSupply)
         house.formalChildCareSupply = self.updateFormalChildCareSupplies(house)
@@ -1654,7 +1749,7 @@ class Sim:
             distance = house.careNetwork[house][supplier]['distance']
  
             household = list(supplier.occupants)
-            householdCarers = [x for x in household if x.age >= self.p['ageTeenagers'] and x.maternityStatus == False]
+            householdCarers = [x for x in household if x.residualInformalSupplies[distance] > 0]
             informalSupply = 0
             if supplier.town == town:
                 informalSupply = sum([x.residualInformalSupplies[distance] for x in householdCarers])
@@ -1662,12 +1757,17 @@ class Sim:
             house.networkTotalSupplies.append(informalSupply)
             house.networkSupply += informalSupply
             
-    def updateChildCareNetworkSupply(self, house, supplier):
+    def updateChildCareNetworkSupply(self, house, supplier, n):
         
         children = [x for x in house.occupants if x.age > 0 and x.age < self.p['ageTeenagers'] and x.unmetChildCareNeed > 0]
         residualFormalChilCare = sum([max(self.p['maxFormalChildCare'] - x.formalChildCareReceived, 0) for x in children])
         
+        oldSupply = house.networkSupply
+        oldFormalSupply = house.formalChildCareSupply
+        oldInformalSupplies = list(house.networkInformalSupplies)
+        
         town = house.town
+        
         if supplier in house.suppliers:
         
             supplierIndex = house.suppliers.index(supplier)
@@ -1677,7 +1777,7 @@ class Sim:
                 distance = house.careNetwork[house][supplier]['distance']
                 
             household = list(supplier.occupants)
-            householdCarers = [x for x in household if x.age >= self.p['ageTeenagers'] and x.maternityStatus == False]
+            householdCarers = [x for x in household if x.residualInformalSupplies[distance] > 0]
             informalSupply = 0
             if supplier.town == town:
                 informalSupply = sum([x.residualInformalSupplies[distance] for x in householdCarers])
@@ -1685,14 +1785,32 @@ class Sim:
             house.networkTotalSupplies[supplierIndex] = informalSupply
             
             if house == supplier:
+                
+               #  print 'Updating formal child care supply.....'
+                
                 if residualFormalChilCare > 0:
                     house.formalChildCareSupply = self.updateFormalChildCareSupplies(house)
                 else:
+                   #  print 'Max formal care ceiling hit'
                     house.formalChildCareSupply = 0
                 house.networkTotalSupplies[supplierIndex] += house.formalChildCareSupply
 
             house.networkSupply = sum(house.networkTotalSupplies)
             
+            if n != 4:
+                if house.networkSupply >= oldSupply:
+                    print ''
+                    print 'Case; ' + str(n)
+                    print oldSupply
+                    print house.networkSupply
+                    print ''
+                    print oldInformalSupplies
+                    print house.networkInformalSupplies
+                    print ''
+                    print oldFormalSupply
+                    print house.formalChildCareSupply
+                    print 'Error: child supply did not change'
+                    sys.exit()
     
     def updateIncomeByTaxBand(self, house):
         householdCarers = [x for x in house.occupants if x.age >= self.p['ageTeenagers'] and x.maternityStatus == False]
@@ -1729,6 +1847,9 @@ class Sim:
     def updateFormalSocialCareSupplies(self, house, distance):
         availableIncomeByTaxBand = list(self.updateIncomeByTaxBand(house))
         residualIncomeForCare = house.residualIncomeForSocialCare[distance]
+        
+        # print 'residual Income for care: ' + str(residualIncomeForCare)
+        
         # How much social care can the household buy with the residual income for care?
         prices = [self.p['priceSocialCare']*(1.0 - self.p['socialCareTaxFreeRate'])*(1.0-x*self.p['taxBreakRate']) for x in self.p['taxationRates']]
         incomeByTaxBand = list(availableIncomeByTaxBand)
@@ -1741,17 +1862,32 @@ class Sim:
             else:
                 totalHours += residualIncomeForCare/prices[i]
                 break
-        socialCareSupplies = int((totalHours+self.p['quantumCare']/2)/self.p['quantumCare'])*self.p['quantumCare']
+        
+        # print 'Tot hours: ' + str(totalHours)
+        
+        socialCareSupplies = round(totalHours)
+        
+        # socialCareSupplies = int((totalHours+self.p['quantumCare']/2)/self.p['quantumCare'])*self.p['quantumCare']
         return socialCareSupplies
             
 
     def updateFormalChildCareSupplies(self, receiver):
+        
         residualIncomeForCare = receiver.residualIncomeForChildCare
         receiverOccupants = receiver.occupants
         children = [x for x in receiverOccupants if x.age > 0 and x.age < self.p['ageTeenagers']]
         formalChilCareReceived = [x.formalChildCareReceived for x in children]
+        
+        # print 'Formal child care received:' + str(formalChilCareReceived)
+        
         discountedNeed = [max(self.p['childcareTaxFreeCap']-x, 0) for x in formalChilCareReceived]
+        
+        # print 'Discounted need: ' + str(discountedNeed)
+        
         discountedCost = sum(discountedNeed)*self.p['priceChildCare']*(1.0-self.p['childCareTaxFreeRate'])
+        
+        # print 'Discounted Cost: ' + str(discountedCost)
+        
         totHours = 0
         if residualIncomeForCare > discountedCost:
             totHours = sum(discountedNeed)
@@ -1759,7 +1895,12 @@ class Sim:
             totHours += residualIncomeForCare/self.p['priceChildCare']
         else:
             totHours = residualIncomeForCare/(self.p['priceChildCare']*(1.0-self.p['childCareTaxFreeRate']))
-        totHours = int((totHours+self.p['quantumCare']/2)/self.p['quantumCare'])*self.p['quantumCare']        
+            
+        # print 'Total formal supply hours: ' + str(totHours)
+        
+        # totHours = int((totHours+self.p['quantumCare']/2)/self.p['quantumCare'])*self.p['quantumCare']   
+        totHours = round(totHours)
+        
         return totHours
             
     def resetCareVariables_KN(self):
