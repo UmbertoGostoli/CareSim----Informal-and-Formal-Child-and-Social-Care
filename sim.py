@@ -349,54 +349,92 @@ class Sim:
         
         startYear = time.time()
         
+        
+        print 'Doing fucntion 1...'
+        
         self.computeClassShares()
+        
+        print 'Doing fucntion 2...'
       
         ###################   Do Deaths   #############################
       
         self.doDeaths()
         
+        print 'Doing fucntion 3...'
+        
         ###################   Do Care Transitions   ##########################
         
         # self.doCareTransitions()
         
+        print 'Doing fucntion 4...'
+        
         self.doCareTransitions_UCN()
+        
+        print 'Doing fucntion 5...'
  
         self.startCareAllocation()
+        
+        print 'Doing fucntion 6...'
     
         self.allocateChildCare() 
+        
+        print 'Doing fucntion 7...'
        
         self.allocateSocialCare()
         
+        print 'Doing fucntion 8...'
+        
         self.updateUnmetCareNeed()
         
+        print 'Doing fucntion 9...'
+        
         self.doAgeTransitions()
+        
+        print 'Doing fucntion 10...'
         
         # self.checkHouseholds(0)
         
         self.doBirths()
+        
+        print 'Doing fucntion 11...'
   
         self.updateIncome()
+        
+        print 'Doing fucntion 12...'
         
         # self.updateWealth()
         
         self.updateWealth_Ind()
       
-        
+        print 'Doing fucntion 13...'
         
         # self.doSocialTransition_TD()
         
         self.doSocialTransition()
         
+        print 'Doing fucntion 14...'
+        
         self.doDivorces()
+        
+        print 'Doing fucntion 15...'
         
         self.doMarriages()
         
+        print 'Doing fucntion 16...'
+        
         self.doMovingAround()
+        
+        print 'Doing fucntion 17...'
         
         self.pyramid.update(self.year, self.p['num5YearAgeClasses'], self.p['numCareLevels'],
                             self.p['pixelsInPopPyramid'], self.pop.livingPeople)
         
+        
+        print 'Doing fucntion 18...'
+        
         self.healthCareCost()
+        
+        print 'Doing fucntion 19...'
         
         self.doStats(policyFolder)
         
@@ -805,10 +843,15 @@ class Sim:
     
     
     def startCareAllocation(self):
+        print 'Doing fucntion 5-a...'
         self.resetCareVariables_KN()
+        print 'Doing fucntion 5-b...'
         self.householdCareNetwork()
+        print 'Doing fucntion 5.c...'
         self.computeSocialCareNeeds()
+        print 'Doing fucntion 5.d...'
         self.computeChildCareNeeds()
+        print 'Doing fucntion 5-e...'
         self.householdCareSupply()
         
         
@@ -959,7 +1002,7 @@ class Sim:
             
             if postReceiverCareNeed >= preReceiverCareNeed:
                 print 'Error: child care iteration withount allocation!'
-                # sys.exit()
+                sys.exit()
             
             ########################################################### 
         
@@ -976,10 +1019,14 @@ class Sim:
             
             postChildCareNeed = sum([x.totalChildCareNeed for x in residualReceivers])
             postNetworkSupply = sum([x.networkSupply for x in residualReceivers])
-        
+            
+#            print [x.totalChildCareNeed for x in residualReceivers]
+#            print postChildCareNeed
+#            print preChildCareNeed
+#            print ''
             if postChildCareNeed >= preChildCareNeed:
                 print 'Error: child care iteration withount allocation!'
-                # sys.exit()
+                sys.exit()
                 
             #########################################################################################
             
