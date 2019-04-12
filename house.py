@@ -64,6 +64,7 @@ class House:
         House.counter += 1
                             
 class Town:
+    counter = 1
     """Contains a collection of houses."""
     def __init__ (self, townGridDimension, tx, ty,
                   cdfHouseClasses, density, classBias, densityModifier ):
@@ -71,6 +72,8 @@ class Town:
         self.y = ty
         self.houses = []
         self.name = str(tx) + "-" + str(ty)
+        self.id = Town.counter
+        Town.counter += 1
         if density > 0.0:
             adjustedDensity = density * densityModifier
             for hy in range(int(townGridDimension)):

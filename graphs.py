@@ -12,6 +12,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import os
 from collections import OrderedDict
 import pandas as pd
+import sys
 
 
 def doGraphs(graphsParams, metaParams):
@@ -33,15 +34,23 @@ def doGraphs(graphsParams, metaParams):
             for policyID in range(numPolicies):
                 policyFolder = scenarioFolder + '/Policy_' + str(policyID)
                 outputsDF = pd.read_csv(policyFolder + '/Outputs.csv', sep=',', header=0)
-                singlePolicyGraphs(outputsDF, policyFolder, metaParams)
+                
+                # singlePolicyGraphs(outputsDF, policyFolder, metaParams)
+                
                 multiplePoliciesDF.append(outputsDF)
+                
             if numPolicies > 1:
+                
                 multiplePoliciesGraphs(multiplePoliciesDF, scenarioFolder, metaParams, numPolicies)
+                
             multipleScenariosDF.append(multiplePoliciesDF)
         if numScenarios > 1:
+            
             multipleScenariosGraphs(multipleScenariosDF, repFolder, metaParams, numPolicies, numScenarios)
+            
         multipleRepeatsDF.append(multipleScenariosDF)
     if numRepeats > 1:
+        
         multipleRepeatsGraphs(multipleRepeatsDF, simFolder, metaParams, numPolicies, numScenarios, numRepeats)
     
     
@@ -419,16 +428,33 @@ def multiplePoliciesGraphs(output, scenarioFolder, p, numPolicies):
     fig, ax = plt.subplots() # Argument: figsize=(5, 3)
     graph = []
     for i in range(numPolicies):
-        graph.append(ax.plot(output[i]['year'], output[i]['shareUnmetCareNeeds'], label = 'Policy ' + str(i)))
-    ax.set_title('Share of Unmet Care Needs')
-    ax.set_ylabel('Unmet Care Needs (share)')
+        graph.append(ax.plot(output[i]['year'], output[i]['share_UnmetSocialCareNeed'], label = 'Policy ' + str(i)))
+    ax.set_title('Share of Unmet Social Care Needs')
+    ax.set_ylabel('Share of Unmet Social Care')
     handels, labels = ax.get_legend_handles_labels()
-    ax.legend(loc = 'lower right')
+    ax.legend(loc = 'upper left')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
     ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
     fig.tight_layout()
-    path = os.path.join(folder, 'shareUnmetCareNeeds_axPol.pdf')
+    path = os.path.join(folder, 'shareUnmetSocialCareNeeds_axPol.pdf')
+    pp = PdfPages(path)
+    pp.savefig(fig)
+    pp.close()
+    
+    fig, ax = plt.subplots() # Argument: figsize=(5, 3)
+    graph = []
+    for i in range(numPolicies):
+        graph.append(ax.plot(output[i]['year'], output[i]['totalUnmetSocialCareNeed'], label = 'Policy ' + str(i)))
+    ax.set_title('Unmet Social Care Needs')
+    ax.set_ylabel('Hours per week')
+    handels, labels = ax.get_legend_handles_labels()
+    ax.legend(loc = 'upper left')
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
+    ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
+    fig.tight_layout()
+    path = os.path.join(folder, 'totalUnmetSocialCareNeeds_axPol.pdf')
     pp = PdfPages(path)
     pp.savefig(fig)
     pp.close()
@@ -449,12 +475,12 @@ def multiplePoliciesGraphs(output, scenarioFolder, p, numPolicies):
     pp = PdfPages(path)
     pp.savefig(fig)
     pp.close()
-
+    
     fig, ax = plt.subplots() # Argument: figsize=(5, 3)
     graph = []
     for i in range(numPolicies):
-        graph.append(ax.plot(output[i]['year'], output[i]['publicCare'], label = 'Policy ' + str(i)))
-    ax.set_title('Amount of Public Care')
+        graph.append(ax.plot(output[i]['year'], output[i]['totalOWSC'], label = 'Policy ' + str(i)))
+    ax.set_title('Out-of-Work Care')
     ax.set_ylabel('Hours per week')
     handels, labels = ax.get_legend_handles_labels()
     ax.legend(loc = 'lower right')
@@ -462,7 +488,24 @@ def multiplePoliciesGraphs(output, scenarioFolder, p, numPolicies):
     ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
     ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
     fig.tight_layout()
-    path = os.path.join(folder, 'publicCare_axPol.pdf')
+    path = os.path.join(folder, 'outOfWorkCare_axPol.pdf')
+    pp = PdfPages(path)
+    pp.savefig(fig)
+    pp.close()
+
+    fig, ax = plt.subplots() # Argument: figsize=(5, 3)
+    graph = []
+    for i in range(numPolicies):
+        graph.append(ax.plot(output[i]['year'], output[i]['publicSocialCare'], label = 'Policy ' + str(i)))
+    ax.set_title('Amount of Public Social Care')
+    ax.set_ylabel('Hours per week')
+    handels, labels = ax.get_legend_handles_labels()
+    ax.legend(loc = 'lower right')
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
+    ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
+    fig.tight_layout()
+    path = os.path.join(folder, 'publicSocialCare_axPol.pdf')
     pp = PdfPages(path)
     pp.savefig(fig)
     pp.close()
@@ -480,6 +523,28 @@ def multiplePoliciesGraphs(output, scenarioFolder, p, numPolicies):
     ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
     fig.tight_layout()
     path = os.path.join(folder, 'employmentRate_axPol.pdf')
+    pp = PdfPages(path)
+    pp.savefig(fig)
+    pp.close()
+    
+    fig, ax = plt.subplots() # Argument: figsize=(5, 3)
+    graph = []
+    for i in range(numPolicies):
+        c1 = output[i]['costTaxFreeChildCare']
+        c2 = output[i]['costPublicChildCare']
+        c3 = output[i]['costPublicSocialCare']
+        c4 = output[i]['costTaxFreeSocialCare']
+        policyCost = [sum(x) for x in zip(c1, c2, c3, c4)]
+        graph.append(ax.plot(output[i]['year'], policyCost, label = 'Policy ' + str(i)))
+    ax.set_title('Policy Cost')
+    ax.set_ylabel('Pounds per week')
+    handels, labels = ax.get_legend_handles_labels()
+    ax.legend(loc = 'lower right')
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
+    ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
+    fig.tight_layout()
+    path = os.path.join(folder, 'directPolicyCost_axPol.pdf')
     pp = PdfPages(path)
     pp.savefig(fig)
     pp.close()
@@ -516,7 +581,7 @@ def multipleScenariosGraphs(output, repFolder, p, numPolicies, numScenarios):
         fig, ax = plt.subplots() # Argument: figsize=(5, 3)
         graph = []
         for i in range(numScenarios):
-            graph.append(ax.plot(output[i][j]['year'], output[i][j]['shareUnmetCareNeeds'], label = 'Scenario ' + str(i+1)))
+            graph.append(ax.plot(output[i][j]['year'], output[i][j]['share_UnmetSocialCareNeed'], label = 'Scenario ' + str(i+1)))
         # p2, = ax.plot(output[1][0]['year'], output[1]['currentPop'], color="blue", label = 'Policy 1')
         ax.set_title('Unmet Care Needs - Policy ' + str(j))
         ax.set_ylabel('Unmet Care Needs (share)')
@@ -526,7 +591,7 @@ def multipleScenariosGraphs(output, repFolder, p, numPolicies, numScenarios):
         ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
         ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
         fig.tight_layout()
-        path = os.path.join(folder, 'shareUnmetCareNeeds_axScen_P' + str(j) + '.pdf')
+        path = os.path.join(folder, 'shareUnmetSocialCareNeeds_axScen_P' + str(j) + '.pdf')
         pp = PdfPages(path)
         pp.savefig(fig)
         pp.close()
@@ -589,54 +654,404 @@ def multipleScenariosGraphs(output, repFolder, p, numPolicies, numScenarios):
         pp.close()
     
 
-def multipleRepeatsGraphs(output, simFolder, p, numRepeats, numPolicies, numScenarios):
+def multipleRepeatsGraphs(output, simFolder, p, numPolicies, numScenarios, numRepeats):
+    
+    # print 'doing mrg...'
     
     folder = simFolder + '/Graphs'
     if not os.path.exists(folder):
         os.makedirs(folder)
+    
 
     # Add graphs across runs (for the same scenario/policy combinations)
     # For each policy scenario, take the average of year 2010-2020 for each run, and do a bar chart with error bars for each outcome of interest
     
     # Policy comparison: make charts by outcomes with bars representing the different policies.
     
-    for j in range(numPolicies):
-        for i in range(numScenarios):
-            fig, ax = plt.subplots() # Argument: figsize=(5, 3)
-            graph = []
+    
+    
+    policies = ['Benchmark', 'Policy 1', 'Policy 2', 'Policy 3', 'Policy 4']
+    
+    for i in range(numScenarios):
+        
+        scenarioFolder = folder + '/Scenario ' + str(i+1)
+        if not os.path.exists(scenarioFolder):
+            os.makedirs(scenarioFolder)
+        
+        # Share of Unmet Social Care: mean and sd across the n repeats for the 5 policies.
+        meansOutput = []
+        sdOutput = []
+        for j in range(numPolicies):
+            values = []
             for z in range(numRepeats):
-                graph.append(ax.plot(output[z][i][j]['year'], output[z][i][j]['currentPop'], label = 'Run ' + str(z+1)))
-            ax.set_title('Populations - ' + 'Scenario ' + str(i+1) + '/Policy ' + str(j))
-            ax.set_ylabel('Number of people')
-            handels, labels = ax.get_legend_handles_labels()
-            ax.legend(loc = 'lower right')
-            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-            ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
-            ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
-            fig.tight_layout()
-            path = os.path.join(folder, 'popGrowth_axRep_S' + str(i+1) + '_P' + str(j) + '.pdf')
-            pp = PdfPages(path)
-            pp.savefig(fig)
-            pp.close()
-            
-    for j in range(numPolicies):
-        for i in range(numScenarios):
-            fig, ax = plt.subplots() # Argument: figsize=(5, 3)
-            graph = []
+                policyWindow = []
+                for yearOutput in range(2025, 2036, 1):
+                    policyWindow.append(output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'share_UnmetSocialCareNeed'].values[0])
+                values.append(np.mean(policyWindow))
+            meansOutput.append(np.mean(values))
+            sdOutput.append(np.std(values))
+        fig, ax = plt.subplots()
+        x_pos = np.arange(len(policies))
+        ax.bar(x_pos, meansOutput, yerr=sdOutput, align='center', alpha=0.5, ecolor='black', capsize=10)
+        ax.set_ylabel('Share of Unmet Social Care')
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(policies)
+        ax.set_title('Shares of Unmet Social Care (mean 2025-2035)')
+        ax.yaxis.grid(True)
+    
+        fig.tight_layout()
+        path = os.path.join(scenarioFolder, 'shareUnmetSocialCareNeed.pdf')
+        pp = PdfPages(path)
+        pp.savefig(fig)
+        pp.close()
+        
+        # Hours of Unmet Social Care: mean and sd across the n repeats for the 5 policies.
+        meansOutput = []
+        sdOutput = []
+        for j in range(numPolicies):
+            values = []
             for z in range(numRepeats):
-                graph.append(ax.plot(output[z][i][j]['year'], output[z][i][j]['shareUnmetCareNeeds'], label = 'Run ' + str(z+1)))
-            ax.set_title('Unmet Care Needs - ' + 'Scenario ' + str(i+1) + '/Policy ' + str(j))
-            ax.set_ylabel('Unmet Care Needs (share)')
-            handels, labels = ax.get_legend_handles_labels()
-            ax.legend(loc = 'lower right')
-            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-            ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
-            ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
-            fig.tight_layout()
-            path = os.path.join(folder, 'shareUnmetCareNeeds_axRep_S' + str(i+1) + '_P' + str(j) + '.pdf')
-            pp = PdfPages(path)
-            pp.savefig(fig)
-            pp.close()
+                policyWindow = []
+                for yearOutput in range(2025, 2036, 1):
+                    policyWindow.append(output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'totalUnmetSocialCareNeed'].values[0])
+                values.append(np.mean(policyWindow))
+            meansOutput.append(np.mean(values))
+            sdOutput.append(np.std(values))
+        fig, ax = plt.subplots()
+        x_pos = np.arange(len(policies))
+        ax.bar(x_pos, meansOutput, yerr=sdOutput, align='center', alpha=0.5, ecolor='black', capsize=10)
+        ax.set_ylabel('Hours per week')
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(policies)
+        ax.set_title('Unmet Social Care Needs (mean 2025-2035)')
+        ax.yaxis.grid(True)
+    
+        fig.tight_layout()
+        path = os.path.join(scenarioFolder, 'hoursUnmetSocialCareNeed.pdf')
+        pp = PdfPages(path)
+        pp.savefig(fig)
+        pp.close()
+        
+        # Direct policy cost (total)
+        meansOutput = []
+        sdOutput = []
+        for j in range(numPolicies):
+            values = []
+            for z in range(numRepeats):
+                policyWindow = []
+                for yearOutput in range(2025, 2036, 1):
+                    tfc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costTaxFreeChildCare'].values[0]
+                    pc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costPublicChildCare'].values[0]
+                    ps = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costPublicSocialCare'].values[0]
+                    tfs = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costTaxFreeSocialCare'].values[0]
+                    policyWindow.append(tfc+pc+ps+tfs)
+                values.append(np.mean(policyWindow))
+            meansOutput.append(np.mean(values))
+            sdOutput.append(np.std(values))
+        fig, ax = plt.subplots()
+        x_pos = np.arange(len(policies))
+        ax.bar(x_pos, meansOutput, yerr=sdOutput, align='center', alpha=0.5, ecolor='black', capsize=10)
+        ax.set_ylabel('Pounds per week')
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(policies)
+        ax.set_title('Direct Policy Cost (mean 2025-2035)')
+        ax.yaxis.grid(True)
+    
+        fig.tight_layout()
+        path = os.path.join(scenarioFolder, 'directPolicyCost.pdf')
+        pp = PdfPages(path)
+        pp.savefig(fig)
+        pp.close()
+        
+        # ICERD
+        newPolicies = policies[1:]
+        meansOutput = []
+        sdOutput = []
+        for j in range(1, numPolicies):
+            values = []
+            for z in range(numRepeats):
+                policyWindow = []
+                for yearOutput in range(2025, 2036, 1):
+                    tfc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costTaxFreeChildCare'].values[0]
+                    pc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costPublicChildCare'].values[0]
+                    ps = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costPublicSocialCare'].values[0]
+                    tfs = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costTaxFreeSocialCare'].values[0]
+                    policyCost = tfc+pc+ps+tfs
+                    tfc = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'costTaxFreeChildCare'].values[0]
+                    pc = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'costPublicChildCare'].values[0]
+                    ps = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'costPublicSocialCare'].values[0]
+                    tfs = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'costTaxFreeSocialCare'].values[0]
+                    benchmarkCost = tfc+pc+ps+tfs
+                    deltaCost = policyCost-benchmarkCost
+                    hourUnmetCarePolicy = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'totalUnmetSocialCareNeed'].values[0]
+                    hourUnmetCareBenchmark = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'totalUnmetSocialCareNeed'].values[0]
+                    deltaCare = hourUnmetCareBenchmark-hourUnmetCarePolicy
+                    policyWindow.append(deltaCost/deltaCare)
+                values.append(np.mean(policyWindow))
+            meansOutput.append(np.mean(values))
+            sdOutput.append(np.std(values))
+        fig, ax = plt.subplots()
+        x_pos = np.arange(len(newPolicies))
+        ax.bar(x_pos, meansOutput, yerr=sdOutput, align='center', alpha=0.5, ecolor='black', capsize=10)
+        ax.set_ylabel('Pounds per hour')
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(newPolicies)
+        ax.set_title('Direct Cost ICER (mean 2025-2035)')
+        ax.yaxis.grid(True)
+    
+        fig.tight_layout()
+        path = os.path.join(scenarioFolder, 'directICER.pdf')
+        pp = PdfPages(path)
+        pp.savefig(fig)
+        pp.close()
+        
+        # Hospitalization cost
+        meansOutput = []
+        sdOutput = []
+        for j in range(numPolicies):
+            values = []
+            for z in range(numRepeats):
+                policyWindow = []
+                for yearOutput in range(2025, 2036, 1):
+                    policyWindow.append(output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'totalHospitalizationCost'].values[0]/52.0)
+                values.append(np.mean(policyWindow))
+            meansOutput.append(np.mean(values))
+            sdOutput.append(np.std(values))
+        fig, ax = plt.subplots()
+        x_pos = np.arange(len(policies))
+        ax.bar(x_pos, meansOutput, yerr=sdOutput, align='center', alpha=0.5, ecolor='black', capsize=10)
+        ax.set_ylabel('Pounds per week')
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(policies)
+        ax.set_title('Hospitalization Costs (mean 2025-2035)')
+        ax.yaxis.grid(True)
+    
+        fig.tight_layout()
+        path = os.path.join(scenarioFolder, 'hospitalizationCosts.pdf')
+        pp = PdfPages(path)
+        pp.savefig(fig)
+        pp.close()
+        
+        # Total public budget costs
+        meansOutput = []
+        sdOutput = []
+        for j in range(numPolicies):
+            values = []
+            for z in range(numRepeats):
+                policyWindow = []
+                for yearOutput in range(2025, 2036, 1):
+                    tfc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costTaxFreeChildCare'].values[0]
+                    pc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costPublicChildCare'].values[0]
+                    ps = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costPublicSocialCare'].values[0]
+                    tfs = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costTaxFreeSocialCare'].values[0]
+                    hc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'totalHospitalizationCost'].values[0]/52.0
+                    policyWindow.append(tfc+pc+ps+tfs+hc)
+                values.append(np.mean(policyWindow))
+            meansOutput.append(np.mean(values))
+            sdOutput.append(np.std(values))
+        fig, ax = plt.subplots()
+        x_pos = np.arange(len(policies))
+        ax.bar(x_pos, meansOutput, yerr=sdOutput, align='center', alpha=0.5, ecolor='black', capsize=10)
+        ax.set_ylabel('Pounds per week')
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(policies)
+        ax.set_title('Public Budget Policy Cost (mean 2025-2035)')
+        ax.yaxis.grid(True)
+    
+        fig.tight_layout()
+        path = os.path.join(scenarioFolder, 'dpublicBudgetPolicyCost.pdf')
+        pp = PdfPages(path)
+        pp.savefig(fig)
+        pp.close()
+        
+        # ICERB
+        newPolicies = policies[1:]
+        meansOutput = []
+        sdOutput = []
+        for j in range(1, numPolicies):
+            values = []
+            for z in range(numRepeats):
+                policyWindow = []
+                for yearOutput in range(2025, 2036, 1):
+                    tfc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costTaxFreeChildCare'].values[0]
+                    pc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costPublicChildCare'].values[0]
+                    ps = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costPublicSocialCare'].values[0]
+                    tfs = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costTaxFreeSocialCare'].values[0]
+                    hc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'totalHospitalizationCost'].values[0]/52.0
+                    policyCost = tfc+pc+ps+tfs+hc
+                    tfc = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'costTaxFreeChildCare'].values[0]
+                    pc = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'costPublicChildCare'].values[0]
+                    ps = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'costPublicSocialCare'].values[0]
+                    tfs = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'costTaxFreeSocialCare'].values[0]
+                    hc = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'totalHospitalizationCost'].values[0]/52.0
+                    benchmarkCost = tfc+pc+ps+tfs+hc
+                    deltaCost = policyCost-benchmarkCost
+                    hourUnmetCarePolicy = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'totalUnmetSocialCareNeed'].values[0]
+                    hourUnmetCareBenchmark = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'totalUnmetSocialCareNeed'].values[0]
+                    deltaCare = hourUnmetCareBenchmark-hourUnmetCarePolicy
+                    policyWindow.append(deltaCost/deltaCare)
+                values.append(np.mean(policyWindow))
+            meansOutput.append(np.mean(values))
+            sdOutput.append(np.std(values))
+        fig, ax = plt.subplots()
+        x_pos = np.arange(len(newPolicies))
+        ax.bar(x_pos, meansOutput, yerr=sdOutput, align='center', alpha=0.5, ecolor='black', capsize=10)
+        ax.set_ylabel('Pounds per hour')
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(newPolicies)
+        ax.set_title('Budget Cost ICER (mean 2025-2035)')
+        ax.yaxis.grid(True)
+    
+        fig.tight_layout()
+        path = os.path.join(scenarioFolder, 'budgetCostICER.pdf')
+        pp = PdfPages(path)
+        pp.savefig(fig)
+        pp.close()
+        
+        # Cost of working hours care
+        meansOutput = []
+        sdOutput = []
+        for j in range(numPolicies):
+            values = []
+            for z in range(numRepeats):
+                policyWindow = []
+                for yearOutput in range(2025, 2036, 1):
+                    policyWindow.append(output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'totalCostOWSC'].values[0])
+                values.append(np.mean(policyWindow))
+            meansOutput.append(np.mean(values))
+            sdOutput.append(np.std(values))
+        fig, ax = plt.subplots()
+        x_pos = np.arange(len(policies))
+        ax.bar(x_pos, meansOutput, yerr=sdOutput, align='center', alpha=0.5, ecolor='black', capsize=10)
+        ax.set_ylabel('Pounds per week')
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(policies)
+        ax.set_title('Working Hours Care Costs (mean 2025-2035)')
+        ax.yaxis.grid(True)
+    
+        fig.tight_layout()
+        path = os.path.join(scenarioFolder, 'workingHoursCareCosts.pdf')
+        pp = PdfPages(path)
+        pp.savefig(fig)
+        pp.close()
+        
+        # Total Policy Costs
+        meansOutput = []
+        sdOutput = []
+        for j in range(numPolicies):
+            values = []
+            for z in range(numRepeats):
+                policyWindow = []
+                for yearOutput in range(2025, 2036, 1):
+                    tfc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costTaxFreeChildCare'].values[0]
+                    pc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costPublicChildCare'].values[0]
+                    ps = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costPublicSocialCare'].values[0]
+                    tfs = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costTaxFreeSocialCare'].values[0]
+                    hc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'totalHospitalizationCost'].values[0]/52.0
+                    ows = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'totalCostOWSC'].values[0]
+                    policyWindow.append(tfc+pc+ps+tfs+hc+ows)
+                values.append(np.mean(policyWindow))
+            meansOutput.append(np.mean(values))
+            sdOutput.append(np.std(values))
+        fig, ax = plt.subplots()
+        x_pos = np.arange(len(policies))
+        ax.bar(x_pos, meansOutput, yerr=sdOutput, align='center', alpha=0.5, ecolor='black', capsize=10)
+        ax.set_ylabel('Pounds per week')
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(policies)
+        ax.set_title('Total Policy Cost (mean 2025-2035)')
+        ax.yaxis.grid(True)
+    
+        fig.tight_layout()
+        path = os.path.join(scenarioFolder, 'totalPolicyCost.pdf')
+        pp = PdfPages(path)
+        pp.savefig(fig)
+        pp.close()
+        
+        # ICERT
+        newPolicies = policies[1:]
+        meansOutput = []
+        sdOutput = []
+        for j in range(1, numPolicies):
+            values = []
+            for z in range(numRepeats):
+                policyWindow = []
+                for yearOutput in range(2025, 2036, 1):
+                    tfc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costTaxFreeChildCare'].values[0]
+                    pc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costPublicChildCare'].values[0]
+                    ps = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costPublicSocialCare'].values[0]
+                    tfs = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'costTaxFreeSocialCare'].values[0]
+                    hc = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'totalHospitalizationCost'].values[0]/52.0
+                    ows = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'totalCostOWSC'].values[0]
+                    policyCost = tfc+pc+ps+tfs+hc+ows
+                    tfc = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'costTaxFreeChildCare'].values[0]
+                    pc = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'costPublicChildCare'].values[0]
+                    ps = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'costPublicSocialCare'].values[0]
+                    tfs = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'costTaxFreeSocialCare'].values[0]
+                    hc = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'totalHospitalizationCost'].values[0]/52.0
+                    ows = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'totalCostOWSC'].values[0]
+                    benchmarkCost = tfc+pc+ps+tfs+hc+ows
+                    deltaCost = policyCost-benchmarkCost
+                    hourUnmetCarePolicy = output[z][i][j].loc[output[z][i][j]['year'] == yearOutput, 'totalUnmetSocialCareNeed'].values[0]
+                    hourUnmetCareBenchmark = output[z][i][j].loc[output[z][i][0]['year'] == yearOutput, 'totalUnmetSocialCareNeed'].values[0]
+                    deltaCare = hourUnmetCareBenchmark-hourUnmetCarePolicy
+                    policyWindow.append(deltaCost/deltaCare)
+                values.append(np.mean(policyWindow))
+            meansOutput.append(np.mean(values))
+            sdOutput.append(np.std(values))
+        fig, ax = plt.subplots()
+        x_pos = np.arange(len(newPolicies))
+        ax.bar(x_pos, meansOutput, yerr=sdOutput, align='center', alpha=0.5, ecolor='black', capsize=10)
+        ax.set_ylabel('Pounds per hour')
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(newPolicies)
+        ax.set_title('Total Cost ICER (mean 2025-2035)')
+        ax.yaxis.grid(True)
+    
+        fig.tight_layout()
+        path = os.path.join(scenarioFolder, 'totalCostICER.pdf')
+        pp = PdfPages(path)
+        pp.savefig(fig)
+        pp.close()
+        
+    
+#    for j in range(numPolicies):
+#        for i in range(numScenarios):
+#            fig, ax = plt.subplots() # Argument: figsize=(5, 3)
+#            graph = []
+#            for z in range(numRepeats):
+#                graph.append(ax.plot(output[z][i][j]['year'], output[z][i][j]['currentPop'], label = 'Run ' + str(z+1)))
+#            ax.set_title('Populations - ' + 'Scenario ' + str(i+1) + '/Policy ' + str(j))
+#            ax.set_ylabel('Number of people')
+#            handels, labels = ax.get_legend_handles_labels()
+#            ax.legend(loc = 'lower right')
+#            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+#            ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
+#            ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
+#            fig.tight_layout()
+#            path = os.path.join(folder, 'popGrowth_axRep_S' + str(i+1) + '_P' + str(j) + '.pdf')
+#            pp = PdfPages(path)
+#            pp.savefig(fig)
+#            pp.close()
+#            
+#    for j in range(numPolicies):
+#        for i in range(numScenarios):
+#            fig, ax = plt.subplots() # Argument: figsize=(5, 3)
+#            graph = []
+#            for z in range(numRepeats):
+#                graph.append(ax.plot(output[z][i][j]['year'], output[z][i][j]['share_UnmetSocialCareNeed'], label = 'Run ' + str(z+1)))
+#            ax.set_title('Unmet Care Needs - ' + 'Scenario ' + str(i+1) + '/Policy ' + str(j))
+#            ax.set_ylabel('Unmet Care Needs (share)')
+#            handels, labels = ax.get_legend_handles_labels()
+#            ax.legend(loc = 'lower right')
+#            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+#            ax.set_xlim(left = int(p['statsCollectFrom']), right = int(p['endYear']))
+#            ax.set_xticks(range(int(p['statsCollectFrom']), int(p['endYear'])+1, 20))
+#            fig.tight_layout()
+#            path = os.path.join(folder, 'shareUnmetSocialCareNeeds_axRep_S' + str(i+1) + '_P' + str(j) + '.pdf')
+#            pp = PdfPages(path)
+#            pp.savefig(fig)
+#            pp.close()
 
 
 
