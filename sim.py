@@ -166,7 +166,7 @@ class Sim:
         
         startSim = time.time()
         
-        for self.year in range (startYear, int(self.p['endYear']+1)):
+        for self.year in range(startYear, int(self.p['endYear']+1)):
             
             print 'Policy: ' + str(policy)
             print self.year
@@ -350,91 +350,91 @@ class Sim:
         startYear = time.time()
         
         
-        print 'Doing fucntion 1...'
+        # print 'Doing fucntion 1...'
         
         self.computeClassShares()
         
-        print 'Doing fucntion 2...'
+        # print 'Doing fucntion 2...'
       
         ###################   Do Deaths   #############################
       
         self.doDeaths()
         
-        print 'Doing fucntion 3...'
+        # print 'Doing fucntion 3...'
         
         ###################   Do Care Transitions   ##########################
         
         # self.doCareTransitions()
         
-        print 'Doing fucntion 4...'
+        # print 'Doing fucntion 4...'
         
         self.doCareTransitions_UCN()
         
-        print 'Doing fucntion 5...'
+        # print 'Doing fucntion 5...'
  
         self.startCareAllocation()
         
-        print 'Doing fucntion 6...'
+        # print 'Doing fucntion 6...'
     
         self.allocateChildCare() 
         
-        print 'Doing fucntion 7...'
+        # print 'Doing fucntion 7...'
        
         self.allocateSocialCare()
         
-        print 'Doing fucntion 8...'
+        # print 'Doing fucntion 8...'
         
         self.updateUnmetCareNeed()
         
-        print 'Doing fucntion 9...'
+        # print 'Doing fucntion 9...'
         
         self.doAgeTransitions()
         
-        print 'Doing fucntion 10...'
+        # print 'Doing fucntion 10...'
         
         # self.checkHouseholds(0)
         
         self.doBirths()
         
-        print 'Doing fucntion 11...'
+        # print 'Doing fucntion 11...'
   
         self.updateIncome()
         
-        print 'Doing fucntion 12...'
+        # print 'Doing fucntion 12...'
         
         # self.updateWealth()
         
         self.updateWealth_Ind()
       
-        print 'Doing fucntion 13...'
+        # print 'Doing fucntion 13...'
         
         # self.doSocialTransition_TD()
         
         self.doSocialTransition()
         
-        print 'Doing fucntion 14...'
+        # print 'Doing fucntion 14...'
         
         self.doDivorces()
         
-        print 'Doing fucntion 15...'
+        # print 'Doing fucntion 15...'
         
         self.doMarriages()
         
-        print 'Doing fucntion 16...'
+        # print 'Doing fucntion 16...'
         
         self.doMovingAround()
         
-        print 'Doing fucntion 17...'
+        # print 'Doing fucntion 17...'
         
         self.pyramid.update(self.year, self.p['num5YearAgeClasses'], self.p['numCareLevels'],
                             self.p['pixelsInPopPyramid'], self.pop.livingPeople)
         
         
-        print 'Doing fucntion 18...'
+        # print 'Doing fucntion 18...'
         
         self.healthCareCost()
         
-        print 'Doing fucntion 19...'
+        # print 'Doing fucntion 19...'
         
         self.doStats(policyFolder)
         
@@ -843,15 +843,15 @@ class Sim:
     
     
     def startCareAllocation(self):
-        print 'Doing fucntion 5-a...'
+        # print 'Doing fucntion 5-a...'
         self.resetCareVariables_KN()
-        print 'Doing fucntion 5-b...'
+        # print 'Doing fucntion 5-b...'
         self.householdCareNetwork()
-        print 'Doing fucntion 5.c...'
+        # print 'Doing fucntion 5.c...'
         self.computeSocialCareNeeds()
-        print 'Doing fucntion 5.d...'
+        # print 'Doing fucntion 5.d...'
         self.computeChildCareNeeds()
-        print 'Doing fucntion 5-e...'
+        # print 'Doing fucntion 5-e...'
         self.householdCareSupply()
         
         
@@ -878,6 +878,14 @@ class Sim:
             probReceivers = [i/sum(childCareNeeds) for i in childCareNeeds]
             receiver = np.random.choice(residualReceivers, p = probReceivers)
             
+#            print 'High price care: ' + str(receiver.highPriceChildCare)
+#            print 'Low price care: ' + str(receiver.lowPriceChildCare)
+#            
+#            if receiver.highPriceChildCare + receiver.lowPriceChildCare == 0:
+#                print 'Error: receiver has not child care!'
+#                sys.exit()
+#            
+#            print ''
             
             ###    Individual check   ##########################
             
@@ -946,7 +954,7 @@ class Sim:
                     probSuppliers = [i/sum(receiver.networkInformalSupplies) for i in receiver.networkInformalSupplies]
                     supplier = np.random.choice(receiver.suppliers, p = probSuppliers)
                     
-#                    case = 1
+                    case = 1
 #                    print 'tranfer child care: formal (1)'
 #                    print sum(receiver.networkInformalSupplies)
                     
@@ -956,7 +964,7 @@ class Sim:
                 elif receiver.formalChildCareSupply > 0:
                     supplier = receiver
                     # Formal supply: the supplier can only be the household itself.
-#                    case = 2
+                    case = 2
 #                    print 'tranfer child care: formal (2)'
 #                    print receiver.formalChildCareSupply
                     
@@ -982,7 +990,7 @@ class Sim:
                     
                     
                     # Formal supply: the supplier can only be the household itself.
-#                    case = 5
+                    case = 5
 #                    print 'tranfer child care: formal (5)'
 #                    print receiver.formalChildCareSupply
                     
@@ -1001,8 +1009,9 @@ class Sim:
             postReceiverCareNeed = receiver.totalChildCareNeed
             
             if postReceiverCareNeed >= preReceiverCareNeed:
+                print case
                 print 'Error: child care iteration withount allocation!'
-                sys.exit()
+                # sys.exit()
             
             ########################################################### 
         
@@ -1020,17 +1029,21 @@ class Sim:
             postChildCareNeed = sum([x.totalChildCareNeed for x in residualReceivers])
             postNetworkSupply = sum([x.networkSupply for x in residualReceivers])
             
-#            print [x.totalChildCareNeed for x in residualReceivers]
+            # print [x.totalChildCareNeed for x in residualReceivers]
+            
+            
 #            print postChildCareNeed
 #            print preChildCareNeed
 #            print ''
             if postChildCareNeed >= preChildCareNeed:
                 print 'Error: child care iteration withount allocation!'
-                sys.exit()
+                # sys.exit()
                 
             #########################################################################################
             
-            
+#        if self.year == 1862:
+#            sys.exit()
+        
     def allocateSocialCare(self):
         
         self.inHouseInformalCare = 0
@@ -1528,6 +1541,7 @@ class Sim:
                 if careForChild > 0:
                     child.formalChildCareReceived += careForChild
                     child.unmetChildCareNeed -= careForChild
+                    child.unmetChildCareNeed = max(child.unmetChildCareNeed, 0)
                 residualCare -= careForChild
                 if residualCare <= 0:
                     break
@@ -1654,12 +1668,12 @@ class Sim:
         # If 'informal care' is selected: informal care provider are sorted in decreasing order.
         # Their supply is used to satisfy the most expensive care need.
         if care == 'informal care':
-#            case = 3
+            case = 3
 #            print 'tranfer child care: informal (3)'
 #            print informalSupply
             self.transferInformalChildCare(receiver, supplier)
         else:
-#            case = 4
+            case = 4
 #            print 'tranfer child care: formal (4)'
 #            print formalChildCare
         # Both formal and out-of-income informal care are possible: choice depends on price of child care and lowest wage.
@@ -1707,6 +1721,9 @@ class Sim:
         children = [x for x in house.occupants if x.age > 0 and x.age < self.p['ageTeenagers']]
         children.sort(key=operator.attrgetter("unmetChildCareNeed"))
         residualNeeds = [x.unmetChildCareNeed for x in children]
+        
+        # print 'Unmet child care needs: ' + str(residualNeeds)
+        
         marginalNeeds = []
         numbers = []
         toSubtract = 0
@@ -1719,6 +1736,8 @@ class Sim:
                 numbers.append(num)                
                 toSubtract = need
         house.childCareNeeds = marginalNeeds
+        
+        # print 'House child care needs: ' + str(house.childCareNeeds)
         
         prices = []
         residualCare = 0
@@ -1742,6 +1761,8 @@ class Sim:
             prices.append(cost/house.childCareNeeds[i])
         house.childCarePrices = prices
         
+        # print 'House child care prices: ' + str(house.childCarePrices)
+        
         house.highPriceChildCare = 0
         house.lowPriceChildCare = 0
         for i in range(len(house.childCarePrices)):
@@ -1749,6 +1770,19 @@ class Sim:
                 house.highPriceChildCare += house.childCareNeeds[i]
             else:
                 house.lowPriceChildCare += house.childCareNeeds[i]
+        
+        
+        if house.totalChildCareNeed > 0 and (house.highPriceChildCare+house.lowPriceChildCare) <= 0:
+            print 'Error: mismatch between total child care needs in updateChildCareNeeds'
+            print house.totalChildCareNeed
+            print house.childCareNeeds
+            print house.childCarePrices
+            print house.highPriceChildCare
+            print house.lowPriceChildCare
+            sys.exit()
+        # print 'High price care in updateChildCare: ' + str(house.highPriceChildCare)
+            
+        # print 'Low price care in updateChildCare: ' + str(house.lowPriceChildCare)
                     
     def computePotentialFormalChildCareCost(self, house):
         # How much would the household have to pay to provide the same amount of care through formal childcare as a quantum of informal care?
@@ -2187,7 +2221,7 @@ class Sim:
 #            householdIncome = 0
 #            for worker in employed:
 #                worker.income = worker.residualWorkingHours*worker.wage
-            
+            house.totalChildCareNeed = 0
             income = sum([x.income for x in household])
             if income  < self.p['maxHouseholdIncomeChildCareSupport']:
                 firstGroup = [x for x in children if x.age < 2]
@@ -2219,7 +2253,7 @@ class Sim:
                     child.unmetChildCareNeed = child.hoursChildCareDemand
                     child.netChildCareDemand = child.unmetChildCareNeed
                     house.totalChildCareNeed += child.unmetChildCareNeed
-                secondGroup = [x for x in children if x.age > 2 and x < 5]
+                secondGroup = [x for x in children if x.age > 2 and x.age < 5]
                 for child in secondGroup:
                     child.unmetChildCareNeed = max(0, child.hoursChildCareDemand - self.p['freeChildCareHoursPreSchool'])
                     child.netChildCareDemand = child.unmetChildCareNeed
@@ -2285,6 +2319,16 @@ class Sim:
                     house.highPriceChildCare += house.childCareNeeds[i]
                 else:
                     house.lowPriceChildCare += house.childCareNeeds[i]
+                    
+            if house.totalChildCareNeed > 0 and (house.highPriceChildCare+house.lowPriceChildCare) <= 0:
+                print 'Error: mismatch between total child care needs in computeChildCareNeeds'
+                print residualNeeds
+                print house.totalChildCareNeed
+                print house.childCareNeeds
+                print house.childCarePrices
+                print house.highPriceChildCare
+                print house.lowPriceChildCare
+                sys.exit()
         
         children = [x for x in self.pop.livingPeople if x.age > 0 and x.age < self.p['ageTeenagers']]
         totalChildCareNeed = sum([x.hoursChildCareDemand for x in children])
