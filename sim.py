@@ -1055,6 +1055,8 @@ class Sim:
             self.computeSocialCareNetworkSupply(receiver)
         residualReceivers = [x for x in receivers if x.networkSupply > 0]
         
+        
+        
         while len(residualReceivers) > 0:
             
             #################    Check if transfer is done: Pre need and supply   ######################################
@@ -1097,6 +1099,7 @@ class Sim:
                     continue
                 self.updateSocialCareNetworkSupply(receiver, supplier, 0)
             residualReceivers = [x for x in receivers if x.networkSupply > 0]
+            
             
             #################    Check if transfer is done: Post need and supply   ######################################
             
@@ -1191,6 +1194,19 @@ class Sim:
                     supplier.residualIncomeForSocialCare[j] = max(supplier.residualIncomeForSocialCare[j], 0.0)
                 supplier.householdFormalSupplyCost += costQuantumSocialCare
                 
+                if len(employed) > 0:
+                    employed.sort(key=operator.attrgetter("wage"), reverse=True)
+                    residualCare = self.p['quantumCare']
+                    for worker in employed:
+                        maxCare = costQuantumSocialCare/worker.wage
+                        workerCare = min(maxCare, residualCare)
+                        worker.availableWorkingHours -= workerCare
+                        worker.availableWorkingHours = max(worker.availableWorkingHours, 0)
+                        costQuantumSocialCare -= workerCare*worker.wage
+                        residualCare -= workerCare
+                        if residualCare <= 0:
+                            break
+                
                 # print 'Post income for social care: ' + str(supplier.residualIncomeForSocialCare)
                 
                 receiverOccupants = list(receiver.occupants)                
@@ -1220,8 +1236,19 @@ class Sim:
                     supplier.householdFormalSupplyCost += costQuantumSocialCare
                     
                     employed.sort(key=operator.attrgetter("wage"), reverse=True)
-                    employed[0].availableWorkingHours -= costQuantumSocialCare/employed[0].wage
-                    employed[0].availableWorkingHours = max(employed[0].availableWorkingHours, 0)
+                    residualCare = self.p['quantumCare']
+                    for worker in employed:
+                        maxCare = costQuantumSocialCare/worker.wage
+                        workerCare = min(maxCare, residualCare)
+                        worker.availableWorkingHours -= workerCare
+                        worker.availableWorkingHours = max(worker.availableWorkingHours, 0)
+                        costQuantumSocialCare -= workerCare*worker.wage
+                        residualCare -= workerCare
+                        if residualCare <= 0:
+                            break
+                        
+                    # employed[0].availableWorkingHours -= costQuantumSocialCare/employed[0].wage
+                    # employed[0].availableWorkingHours = max(employed[0].availableWorkingHours, 0)
                     
                     receiverOccupants = list(receiver.occupants)
                     careTakers = [x for x in receiverOccupants if x.unmetSocialCareNeed > 0]
@@ -1246,6 +1273,9 @@ class Sim:
                         self.inHouseInformalCare += self.p['quantumCare']
                         
                     careTransferred = min(self.p['quantumCare'], carer.availableWorkingHours)
+                    if carer.residualWorkingHours == 0:
+                        print 'No residual working hours in carer'
+                        sys.exit()
                     if carer in receiver.occupants and careTransferred > 0:
                         carer.careForFamily = True
                     carer.availableWorkingHours -= careTransferred #self.p['quantumCare']
@@ -1338,13 +1368,17 @@ class Sim:
 #                self.perCapitaHouseholdIncome.append(incomePerCapita)
 #            ##########################################################
      
-            incomeForCareShare_D0 = 1.0 - 1/math.exp(self.p['incomeCareParam']*incomePerCapita)
+            incomeForCareShare_D0 = 1.0 - 1.0/math.exp(self.p['incomeCareParam']*incomePerCapita)
             
             # incomeShares.append(incomeForCareShare_D0)
             
-            incomeForCareShare_D1 = (1.0 - 1/math.exp(self.p['incomeCareParam']*incomePerCapita))*self.p['formalCareDiscountFactor']
+            incomeForCareShare_D1 = (1.0 - 1.0/math.exp(self.p['incomeCareParam']*incomePerCapita))*self.p['formalCareDiscountFactor']
+            
+            # print incomeForCareShare_D1
+            
             residualIncomeForCare_D0 = netIncome*incomeForCareShare_D0
             residualIncomeForCare_D1 = netIncome*incomeForCareShare_D1
+            
             house.residualIncomeForSocialCare = [residualIncomeForCare_D0, residualIncomeForCare_D1, 0, 0]
     
     def computeSocialCareNetworkSupply(self, house):
@@ -1366,9 +1400,9 @@ class Sim:
             # Informal Care Supplies
             household = list(supplier.occupants)
             householdCarers = [x for x in household if x.age >= self.p['ageTeenagers'] and x.maternityStatus == False]
-            householdInformalSupply = []
-            for i in range(4):
-                householdInformalSupply.append(sum([x.residualInformalSupplies[i] for x in householdCarers]))
+            # householdInformalSupply = []
+            # for i in range(4):
+                # householdInformalSupply.append(sum([x.residualInformalSupplies[i] for x in householdCarers]))
             informalSupply = 0
             if supplier.town == town:
                 informalSupply = float(sum([x.residualInformalSupplies[distance] for x in householdCarers]))
@@ -1434,7 +1468,7 @@ class Sim:
                 print oldTotalSupplies
                 print house.networkTotalSupplies
                 
-                sys.exit()
+                # sys.exit()
         
         
     
@@ -1523,12 +1557,21 @@ class Sim:
             #Reducing the available working hours for informal care
             if len(employed) > 0:
                 employed.sort(key=operator.attrgetter("wage"), reverse=True)
-                employed[0].availableWorkingHours -= costQuantumChildCare/employed[0].wage
-                employed[0].availableWorkingHours = max(employed[0].availableWorkingHours, 0)
+                residualCare = self.p['quantumCare']
+                for worker in employed:
+                    maxCare = costQuantumChildCare/worker.wage
+                    workerCare = min(maxCare, residualCare)
+                    worker.availableWorkingHours -= workerCare
+                    worker.availableWorkingHours = max(worker.availableWorkingHours, 0)
+                    costQuantumChildCare -= workerCare*worker.wage
+                    residualCare -= workerCare
+                    if residualCare <= 0:
+                        break
                 
-            
-            
-            
+                #employed.sort(key=operator.attrgetter("wage"), reverse=True)
+                #employed[0].availableWorkingHours -= costQuantumChildCare/employed[0].wage
+                #employed[0].availableWorkingHours = max(employed[0].availableWorkingHours, 0)
+                
             formalChildCares = [x.formalChildCareReceived for x in children if x.formalChildCareReceived < self.p['childcareTaxFreeCap']]
             if len(formalChildCares) > 0:
                 children.sort(key=operator.attrgetter("formalChildCareReceived"))
@@ -2158,8 +2201,12 @@ class Sim:
                             elif  person.wealth > self.p['minWealthMeansTest'] and person.wealth < self.p['maxWealthMeansTest']:
                                 stateShare = self.p['partialContributionRate']
                             stateContribution = (socialCareCost - (person.income - self.p['minimumIncomeGuarantee']))*stateShare
-                            stateCare = int(stateContribution/self.p['priceSocialCare']*(1.0 - self.p['socialCareTaxFreeRate']))
+                            stateCare = stateContribution/(self.p['priceSocialCare']*(1.0 - self.p['socialCareTaxFreeRate']))
                             stateCare = int((stateCare+self.p['quantumCare']/2)/self.p['quantumCare'])*self.p['quantumCare']
+                            # print 'State Care: ' + str(stateCare)
+                            if stateCare < 0:
+                                print 'Error: public care is negative!'
+                                sys.exit()
                             self.publicSocialCare += stateCare
                             person.unmetSocialCareNeed -= stateCare   
                         else:
@@ -2169,8 +2216,12 @@ class Sim:
                             elif  person.wealth > self.p['minWealthMeansTest'] and person.wealth < self.p['maxWealthMeansTest']:
                                 stateShare = self.p['partialContributionRate']
                             stateContribution = socialCareCost*stateShare
-                            stateCare = int(stateContribution/self.p['priceSocialCare']*(1.0 - self.p['socialCareTaxFreeRate']))
+                            stateCare = stateContribution/(self.p['priceSocialCare']*(1.0 - self.p['socialCareTaxFreeRate']))
                             stateCare = int((stateCare+self.p['quantumCare']/2)/self.p['quantumCare'])*self.p['quantumCare']
+                            # print 'State Care: ' + str(stateCare)
+                            if stateCare < 0:
+                                print 'Error: public care is negative!'
+                                sys.exit()
                             self.publicSocialCare += stateCare
                             person.unmetSocialCareNeed -= stateCare
                         
@@ -2397,14 +2448,16 @@ class Sim:
         for person in peopleNotYetRetired:
             age = self.year - person.birthdate
             ## Do transitions to adulthood and retirement
-            if age == self.p['ageOfAdulthood']:
+            if person.age == self.p['ageTeenagers']:
+                person.status == 'teenager'
+            if person.age == self.p['ageOfAdulthood']:
                 person.status = 'student'
                 if np.random.random() < self.p['probOutOfTownStudent']:
                     person.outOfTownStudent = True
                 person.classRank = 0 # max(person.father.classRank, person.mother.classRank)
                 if person.house == self.displayHouse:
                     self.textUpdateList.append(str(self.year) + ": #" + str(person.id) + " is now an adult.")
-            elif age == self.p['ageOfRetirement']:
+            elif person.age == self.p['ageOfRetirement']:
                 person.status = 'retired'
                 person.wage = 0
                 dK = np.random.normal(0, self.p['wageVar'])
@@ -3152,7 +3205,7 @@ class Sim:
                 household = [x for x in house.occupants]
                 
                 # Compute relocation probability
-                relocationCost = sum([math.pow(x.yearInTown, self.p['relocationCostParam']) for x in household])
+                relocationCost = self.p['relocationCostParam']*sum([math.pow(x.yearInTown, self.p['yearsInTownBeta']) for x in household])
                 supportNetworkFactor = math.exp(self.p['supportNetworkBeta']*house.networkSupport)
                 relocationCostFactor = math.exp(self.p['relocationCostBeta']*relocationCost)
                 perCapitaIncome = self.computeHouseholdIncome(house)/float(len(household))
@@ -3171,6 +3224,9 @@ class Sim:
 #                    stepChildrenPerson = [x for x in partnerChildren if x not in personChildren]
 #                    person.children.extend(stepChildrenPerson)
 #                    person.partner.children.extend(stepChildrenPartner)
+                    
+                    # Add a choice of town which depends on kinship network and available houses.
+                    
                     distance = random.choice(['here,''near','far'])
                     if person.house == self.displayHouse:
                         messageString = str(self.year) + ": #" + str(person.id) + " and #" + str(person.partner.id) + " move house"
@@ -3440,8 +3496,11 @@ class Sim:
         totalSocialCare = totalInformalSocialCare + totalFormalSocialCare
         totalUnmetSocialCareNeed = sum([x.unmetSocialCareNeed for x in self.pop.livingPeople])
         share_InformalSocialCare = 0
-        if totalFormalSocialCare > 0:
+        if totalSocialCare > 0:
             share_InformalSocialCare = totalInformalSocialCare/totalSocialCare
+        
+        print share_InformalSocialCare
+        
         share_UnmetSocialCareNeed = 0
         if totalSocialCareNeed > 0:
             share_UnmetSocialCareNeed = totalUnmetSocialCareNeed/totalSocialCareNeed
