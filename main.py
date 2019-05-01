@@ -162,23 +162,34 @@ def init_params():
     p['zeroYearCare'] = 80.0 
     
     # Public Child Care Provision Parameters
+    # 1st policy parameter
     p['childCareTaxFreeRate'] = 0.2
+    ###########################################
     p['maxPublicContribution'] = 2000.0
     p['childcareTaxFreeCap'] = int((p['maxPublicContribution']/52.0)/(p['priceChildCare']*p['childCareTaxFreeRate']))
-    p['maxHouseholdIncomeChildCareSupport'] = 300
+    p['maxHouseholdIncomeChildCareSupport'] = 300.0
     p['freeChildCareHoursToddlers'] = 12
+    
+    # 2nd policy parameter
     p['freeChildCareHoursPreSchool'] = 20
+    ##############################################
     p['freeChildCareHoursSchool'] = 32
     
     # Public Social Care Provision Parameters
     p['taxBreakRate'] = 0.0
+    
+    # 4th policy parameter
     p['socialCareTaxFreeRate'] = 0.0
-    p['publicCareNeedLevel'] = 4 # 5
+    ##########################################
+    # 3rd policy parameter
+    p['publicCareNeedLevel'] = 3 # 5
+    #############################################
+    
     p['publicCareAgeLimit'] = 0 # 1000
-    p['minWealthMeansTest'] = 14250
-    p['maxWealthMeansTest'] = 23250
+    p['minWealthMeansTest'] = 14250.0
+    p['maxWealthMeansTest'] = 23250.0
     p['partialContributionRate'] = 0.5
-    p['minimumIncomeGuarantee'] = 163
+    p['minimumIncomeGuarantee'] = 163.0
     
     
     p['incomeCareParam'] = 0.0005
@@ -195,9 +206,9 @@ def init_params():
     p['incomeBeta'] = 0.01
     p['careBeta'] = 0.01
     
-    p['retiredSupply'] = [48.0, 24.0, 12.0, 8.0]
-    p['employedSupply'] = [20.0, 12.0, 8.0, 4.0]
-    p['studentSupply'] = [24.0, 12.0, 4.0, 0.0]
+    p['retiredSupply'] = [56.0, 28.0, 16.0, 8.0]
+    p['employedSupply'] = [16.0, 12.0, 8.0, 4.0]
+    p['studentSupply'] = [16.0, 8.0, 4.0, 0.0]
     p['teenagerSupply'] = [12.0, 0.0, 0.0, 0.0]
     
     # Marriages params
@@ -287,6 +298,7 @@ def init_params():
     p['agingParentsMoveInWithKids'] = 0.1
     p['variableMoveBack'] = 0.1
     
+    p['yearsInTownBeta'] = 0.5
     p['relocationCostParam'] = 0.5
     p['supportNetworkBeta'] = 0.1
     p['relocationCostBeta'] = 0.1
